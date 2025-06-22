@@ -10,15 +10,21 @@ class MainView(QMainWindow):
         self.setWindowTitle("Tournament Creator")
         self.setGeometry(100, 100, 1200, 800)
 
-        tabs = QTabWidget()
+        self.tabs = QTabWidget()
         self.overview_tab = HomeView(controller)
         self.categories_tab = CategoriesView(controller)
         self.days_tab = DaysView(controller)
-        tabs.addTab(self.overview_tab, "Home")
-        tabs.addTab(self.categories_tab, "Categories")
-        tabs.addTab(self.days_tab, "Days")
+        self.tabs.addTab(self.overview_tab, "Home")
+        self.tabs.addTab(self.categories_tab, "Categories")
+        self.tabs.addTab(self.days_tab, "Days")
+        
+        self.tabs.currentChanged.connect(self.on_tab_changed)
 
-        self.setCentralWidget(tabs)
+        self.setCentralWidget(self.tabs)
+
+    def on_tab_changed(self, index):
+        # Automatically update the model whenever user changes tab
+        self.controller.update_model_from_views()
 
     def collect_all_inputs(self):
         return {
