@@ -11,9 +11,12 @@ class Controller:
 
     # Put the data into the model
     def update_model_from_views(self):
-        days = self.view.days_tab.collect_input_fields() # Get Data from all subviews
+         # Get Data from all subviews
+        days = self.view.days_tab.collect_input_fields()
+        categories = self.view.categories_tab.collect_input_fields()
         self.model.set_data({
-            "days": days
+            "days": days,
+            "categories": categories
         })
 
     # TODO: implement
