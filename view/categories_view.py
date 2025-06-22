@@ -114,7 +114,8 @@ class CategoriesView(QWidget):
                 # Category-level inputs
                 name_edit = QLineEdit()
                 group_combo = QComboBox()
-                for g in range(1, 21):
+                max_groups = self.count_spin.value()
+                for g in range(1, max_groups + 1):
                     group_combo.addItem(str(g))
 
                 runs_spin = QSpinBox()
@@ -156,6 +157,19 @@ class CategoriesView(QWidget):
                 if widget:
                     widget.setParent(None)
                     widget.deleteLater()
+
+        # Ensure group_combo values are updated for all categories
+        max_groups = self.count_spin.value()
+        for name_edit, group_combo, *_ in self.category_fields:
+            current_value = group_combo.currentText()
+            group_combo.clear()
+            for g in range(1, max_groups + 1):
+                group_combo.addItem(str(g))
+            # Restore selection if still valid
+            if current_value in [str(g) for g in range(1, max_groups + 1)]:
+                group_combo.setCurrentText(current_value)
+            else:
+                group_combo.setCurrentIndex(0)
 
     # Collects current user input from the form into a structured data dictionary.
     def collect_input_fields(self):
