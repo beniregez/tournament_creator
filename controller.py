@@ -14,11 +14,30 @@ class Controller:
          # Get Data from all subviews
         days = self.view.days_tab.collect_input_fields()
         categories = self.view.categories_tab.collect_input_fields()
+        events = self.view.events_tab.collect_input_fields()
         self.model.set_data({
             "days": days,
-            "categories": categories
+            "categories": categories,
+            "events": events
         })
 
+    def update_events_from_view(self):
+        events = self.view.events_tab.collect_input_fields()
+        self.model.set_events(events)
+
+    def update_categories_from_view(self):
+        categories = self.view.categories_tab.collect_input_fields()
+        self.model.set_categories(categories)
+
+    def update_days_from_view(self):
+        days = self.view.days_tab.collect_input_fields()
+        self.model.set_days(days)
+
+    # Validate and adjust model if necessary
+    def validate_model_after_category_change(self):
+        self.model.validate_events_against_categories()
+        self.model.validate_events_against_days()
+    
     # TODO: implement
     def export_to_excel(self, filepath):
         pass
