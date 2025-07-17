@@ -1,105 +1,213 @@
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QLineEdit,
-    QSpinBox, QTimeEdit, QDateEdit, QPushButton,
-    QGroupBox, QFormLayout, QScrollArea, QFrame
+    QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QDateEdit, QTimeEdit,
+    QHeaderView, QToolBar, QAction
 )
-from PyQt5.QtCore import QDate, Qt, QTime
+from PyQt5.QtCore import Qt, QDate, QTime
+from PyQt5.QtGui import QKeySequence
+
 
 class DaysView(QWidget):
-    def __init__(self, controller):
+    MAX_DAYS = 10
+    ROWS = ["Title", "Date", "Location", "Responsible", "Start time"]
+    CELL_WIDTH = 180
+    CELL_HEIGHT = 32
+
+    def __init__(self, controller=None):
         super().__init__()
         self.controller = controller
+        self.clipboard_data = None
         self.init_ui()
 
     def init_ui(self):
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(QLabel("Choose number of tournament days:"))
+        layout = QVBoxLayout(self)
 
-        self.count_spin = QSpinBox()
-        self.count_spin.setRange(1, 20)
-        self.count_spin.setValue(1)
-        self.count_spin.valueChanged.connect(self.update_fields)
-        main_layout.addWidget(self.count_spin)
+        # === Toolbar ===
+        self.toolbar = QToolBar("Tools")
+        copy_action = QAction("Copy", self)
+        copy_action.setShortcut(QKeySequence.Copy)
+        copy_action.triggered.connect(self.copy_selection)
+        self.toolbar.addAction(copy_action)
 
-        # ScrollArea for the input fields
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        main_layout.addWidget(self.scroll_area)
+        paste_action = QAction("Paste", self)
+        paste_action.setShortcut(QKeySequence.Paste)
+        paste_action.triggered.connect(self.paste_selection)
+        self.toolbar.addAction(paste_action)
 
-        # Central Widget in ScrollArea
-        self.scroll_widget = QWidget()
-        self.fields_layout = QVBoxLayout()
-        self.fields_layout.setContentsMargins(10, 10, 10, 10)
-        self.fields_layout.setSpacing(12)
-        self.scroll_widget.setLayout(self.fields_layout)
-        self.scroll_area.setWidget(self.scroll_widget)
+        cut_action = QAction("Cut", self)
+        cut_action.setShortcut(QKeySequence.Cut)
+        cut_action.triggered.connect(self.cut_selection)
+        self.toolbar.addAction(cut_action)
 
-        self.day_fields = []
-        self.update_fields()
+        delete_action = QAction("Delete", self)
+        delete_action.setShortcut(QKeySequence.Delete)
+        delete_action.triggered.connect(self.clear_selection)
+        self.toolbar.addAction(delete_action)
 
-    def update_fields(self):
-        current_count = len(self.day_fields)
-        target_count = self.count_spin.value()
+        layout.addWidget(self.toolbar)
 
-        # Additional days wished: Append new fields
-        if target_count > current_count:
-            for i in range(current_count, target_count):
-                group = QGroupBox(f"day {i + 1}")
-                form = QFormLayout()
+        # === Table ===
+        self.table = QTableWidget(len(self.ROWS), self.MAX_DAYS)
+        self.table.setSelectionMode(QTableWidget.ExtendedSelection)
+        self.table.setSelectionBehavior(QTableWidget.SelectItems)
 
-                title = QLineEdit()
-                date = QDateEdit()
-                date.setDisplayFormat("dd.MM.yyyy")
+        self.table.installEventFilter(self)
 
-                location = QLineEdit()
-                responsible = QLineEdit()
-                start_time = QTimeEdit()
-                start_time.setDisplayFormat("HH:mm")
+        # Set headers
+        self.table.setVerticalHeaderLabels(self.ROWS)
+        self.table.setHorizontalHeaderLabels([f"Day {i+1}" for i in range(self.MAX_DAYS)])
 
-                form.addRow("Title:", title)
-                form.addRow("Date:", date)
-                form.addRow("Location:", location)
-                form.addRow("Responsible:", responsible)
-                form.addRow("Start time:", start_time)
+        # Fix column/row sizes
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
+        self.table.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
+        for col in range(self.MAX_DAYS):
+            self.table.setColumnWidth(col, self.CELL_WIDTH)
+        for row in range(len(self.ROWS)):
+            self.table.setRowHeight(row, self.CELL_HEIGHT)
 
-                group.setLayout(form)
-                self.fields_layout.addWidget(group)
+        # Add date/time widgets
+        for col in range(self.MAX_DAYS):
+            date_edit = QDateEdit()
+            date_edit.setDisplayFormat("dd.MM.yyyy")
+            date_edit.setCalendarPopup(True)
+            self.table.setCellWidget(1, col, date_edit)
 
-                self.day_fields.append((title, date, location, responsible, start_time))
+            time_edit = QTimeEdit()
+            time_edit.setDisplayFormat("HH:mm")
+            self.table.setCellWidget(4, col, time_edit)
 
-        # Less days wished: Remove last fields
-        elif target_count < current_count:
-            for _ in range(current_count - target_count):
-                fields = self.day_fields.pop()
-                widget = self.fields_layout.takeAt(self.fields_layout.count() - 1).widget()
-                if widget:
-                    widget.setParent(None)
-                    widget.deleteLater()
+        layout.addWidget(self.table)
+        self.setLayout(layout)
 
-    # Read all input fields.
+    # === Event Filter for shortcuts ===
+    def eventFilter(self, source, event):
+        if source is self.table and event.type() == event.KeyPress:
+            if event.matches(QKeySequence.Copy):
+                self.copy_selection()
+                return True
+            elif event.matches(QKeySequence.Paste):
+                self.paste_selection()
+                return True
+            elif event.matches(QKeySequence.Cut):
+                self.cut_selection()
+                return True
+            elif event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+                self.clear_selection()
+                return True
+        return super().eventFilter(source, event)
+
+    # === Copy/Cut/Paste/Delete ===
+    def copy_selection(self):
+        selected = self.table.selectedRanges()
+        if not selected:
+            return
+        sel = selected[0]
+        copied = []
+        for row in range(sel.topRow(), sel.bottomRow() + 1):
+            row_data = []
+            for col in range(sel.leftColumn(), sel.rightColumn() + 1):
+                if row == 1:
+                    widget = self.table.cellWidget(row, col)
+                    row_data.append(widget.date().toString("dd.MM.yyyy") if widget else "")
+                elif row == 4:
+                    widget = self.table.cellWidget(row, col)
+                    row_data.append(widget.time().toString("HH:mm") if widget else "")
+                else:
+                    item = self.table.item(row, col)
+                    row_data.append(item.text() if item else "")
+            copied.append(row_data)
+        self.clipboard_data = copied
+
+    def paste_selection(self):
+        if not self.clipboard_data:
+            return
+        selected = self.table.selectedRanges()
+        if not selected:
+            return
+        start_row = selected[0].topRow()
+        start_col = selected[0].leftColumn()
+
+        for r_offset, row_data in enumerate(self.clipboard_data):
+            for c_offset, text in enumerate(row_data):
+                row = start_row + r_offset
+                col = start_col + c_offset
+                if row >= self.table.rowCount() or col >= self.table.columnCount():
+                    continue
+                if row == 1:
+                    widget = self.table.cellWidget(row, col)
+                    if widget:
+                        widget.setDate(QDate.fromString(text, "dd.MM.yyyy"))
+                elif row == 4:
+                    widget = self.table.cellWidget(row, col)
+                    if widget:
+                        widget.setTime(QTime.fromString(text, "HH:mm"))
+                else:
+                    item = self.table.item(row, col)
+                    if item is None:
+                        item = QTableWidgetItem()
+                        self.table.setItem(row, col, item)
+                    item.setText(text)
+
+    def cut_selection(self):
+        self.copy_selection()
+        self.clear_selection()
+
+    def clear_selection(self):
+        for item in self.table.selectedItems():
+            item.setText("")
+        for sel in self.table.selectedRanges():
+            for row in range(sel.topRow(), sel.bottomRow() + 1):
+                for col in range(sel.leftColumn(), sel.rightColumn() + 1):
+                    if row == 1:
+                        widget = self.table.cellWidget(row, col)
+                        if widget:
+                            widget.setDate(QDate.currentDate())
+                    elif row == 4:
+                        widget = self.table.cellWidget(row, col)
+                        if widget:
+                            widget.setTime(QTime(0, 0))
+
+    # === Model Methods ===
     def collect_input_fields(self):
-        result = []
-        for fields in self.day_fields:
-            title, date, location, responsible, start_time = fields
-            result.append({
-                "Title": title.text(),
-                "Date": date.date().toString("dd.MM.yyyy"),
-                "Location": location.text(),
-                "Responsible": responsible.text(),
-                "Start time": start_time.time().toString("HH:mm")
-            })
+        result = {}
+        for col in range(self.MAX_DAYS):
+            title_item = self.table.item(0, col)
+            location_item = self.table.item(2, col)
+            responsible_item = self.table.item(3, col)
+
+            date_widget = self.table.cellWidget(1, col)
+            time_widget = self.table.cellWidget(4, col)
+
+            if not any([title_item, location_item, responsible_item]) and not date_widget and not time_widget:
+                continue  # skip empty
+
+            data = {
+                "Title": title_item.text().strip() if title_item else "",
+                "Date": date_widget.date().toString("dd.MM.yyyy") if date_widget else "",
+                "Location": location_item.text().strip() if location_item else "",
+                "Responsible": responsible_item.text().strip() if responsible_item else "",
+                "Start time": time_widget.time().toString("HH:mm") if time_widget else ""
+            }
+
+            if any(data.values()):
+                result[str(col)] = data
         return result
 
-    # Load data from the model and fill GUI fields.
-    def populate_from_model(self, model):
-        data = model.get_days()
-        self.count_spin.setValue(len(data))
-        self.update_fields()
+    def populate_from_model(self, model_data):
+        for col_str, data in model_data.items():
+            col = int(col_str)
+            title_item = QTableWidgetItem(data.get("Title", ""))
+            self.table.setItem(0, col, title_item)
 
-        for i, tag in enumerate(data):
-            title, date, location, responsible, start_time = self.day_fields[i]
-            title.setText(tag.get("Title", ""))
-            date.setDate(QDate.fromString(tag.get("Date", ""), "dd.MM.yyyy"))
-            location.setText(tag.get("Location", ""))
-            responsible.setText(tag.get("Responsible", ""))
-            start_time.setTime(QTime.fromString(tag.get("Start time", ""), "HH:mm"))
+            location_item = QTableWidgetItem(data.get("Location", ""))
+            self.table.setItem(2, col, location_item)
+
+            responsible_item = QTableWidgetItem(data.get("Responsible", ""))
+            self.table.setItem(3, col, responsible_item)
+
+            date_widget = self.table.cellWidget(1, col)
+            if date_widget and data.get("Date"):
+                date_widget.setDate(QDate.fromString(data["Date"], "dd.MM.yyyy"))
+
+            time_widget = self.table.cellWidget(4, col)
+            if time_widget and data.get("Start time"):
+                time_widget.setTime(QTime.fromString(data["Start time"], "HH:mm"))
