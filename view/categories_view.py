@@ -235,26 +235,36 @@ class CategoriesView(QWidget):
                 }
         return data
 
-    def populate_from_model(self, model_data):
+    def populate_from_model(self, model):
+        categories = model.get_categories()
         self.column_colors = {}
-        for col_str, col_data in model_data.items():
-            col = int(col_str)
+
+        for col_str, col_data in categories.items():
+            try:
+                col = int(col_str)
+            except ValueError:
+                continue  # ignore invalid keys
+
+            # Name of category
             self.table.setItem(self.TITLE_ROW_INDEX, col, QTableWidgetItem(col_data.get("name", "")))
 
+            # Group
             group_spin = self.table.cellWidget(self.GROUP_ROW_INDEX, col)
             if group_spin:
                 try:
                     group_spin.setValue(int(col_data.get("group", 1)))
-                except ValueError:
+                except (ValueError, TypeError):
                     pass
 
+            # Runs
             runs_spin = self.table.cellWidget(self.RUNS_ROW_INDEX, col)
             if runs_spin:
                 try:
                     runs_spin.setValue(int(col_data.get("runs", 1)))
-                except ValueError:
+                except (ValueError, TypeError):
                     pass
 
+            # Teams & Colors
             for i, (team, color_hex) in enumerate(zip(col_data.get("teams", []), col_data.get("colors", []))):
                 row = self.TEAM_ROW_OFFSET + i
                 item = QTableWidgetItem(team)

@@ -168,7 +168,7 @@ class DaysView(QWidget):
 
     # === Model Methods ===
     def collect_input_fields(self):
-        result = {}
+        result = []
         for col in range(self.MAX_DAYS):
             title_item = self.table.item(0, col)
             location_item = self.table.item(2, col)
@@ -177,8 +177,9 @@ class DaysView(QWidget):
             date_widget = self.table.cellWidget(1, col)
             time_widget = self.table.cellWidget(4, col)
 
-            if not any([title_item, location_item, responsible_item]) and not date_widget and not time_widget:
-                continue  # skip empty
+            # if not any([title_item, location_item, responsible_item]) and not date_widget and not time_widget:
+            if not any([title_item, location_item, responsible_item]): # TODO Also check if a date or a time has been entered
+                continue  # Skip empty columns
 
             data = {
                 "Title": title_item.text().strip() if title_item else "",
@@ -187,27 +188,55 @@ class DaysView(QWidget):
                 "Responsible": responsible_item.text().strip() if responsible_item else "",
                 "Start time": time_widget.time().toString("HH:mm") if time_widget else ""
             }
+            
+            # TODO: Also check for date and time (requires other way of checking)
+            if (data["Title"] or data["Location"] or data["Responsible"]):
+                result.append(data)
+            else:
+                continue # Skip empty entries. 
 
-            if any(data.values()):
-                result[str(col)] = data
         return result
 
-    def populate_from_model(self, model_data):
-        for col_str, data in model_data.items():
-            col = int(col_str)
-            title_item = QTableWidgetItem(data.get("Title", ""))
-            self.table.setItem(0, col, title_item)
+    def populate_from_model(self, model):
+        days_data = model.get_days()  # List of dicts
+        self.clear_table()
 
-            location_item = QTableWidgetItem(data.get("Location", ""))
-            self.table.setItem(2, col, location_item)
+        for col, day in enumerate(days_data):
+            if col >= self.MAX_DAYS:
+                break
 
-            responsible_item = QTableWidgetItem(data.get("Responsible", ""))
-            self.table.setItem(3, col, responsible_item)
+            # Title
+            self.set_text_item(0, col, day.get("Title", ""))
 
-            date_widget = self.table.cellWidget(1, col)
-            if date_widget and data.get("Date"):
-                date_widget.setDate(QDate.fromString(data["Date"], "dd.MM.yyyy"))
+            # Date (in format "dd.MM.yyyy")
+            self.set_date_item(1, col, day.get("Date", ""))
 
-            time_widget = self.table.cellWidget(4, col)
-            if time_widget and data.get("Start time"):
-                time_widget.setTime(QTime.fromString(data["Start time"], "HH:mm"))
+            # Location
+            self.set_text_item(2, col, day.get("Location", ""))
+
+            # Responsible
+            self.set_text_item(3, col, day.get("Responsible", ""))
+
+            # Start time (format "HH:mm")
+            self.set_time_item(4, col, day.get("Start time", ""))
+
+    def clear_table(self):
+        self.column_colors = {}
+        for row in range(len(self.ROWS)):
+            for col in range(self.MAX_DAYS):
+                self.table.setItem(row, col, QTableWidgetItem(""))
+
+    # Methods to insert formatted QTableWidgetItems into specific cells.
+    def set_text_item(self, row, col, text):
+        item = QTableWidgetItem(text)
+        self.table.setItem(row, col, item)
+
+    def set_date_item(self, row, col, date_str):
+        item = QTableWidgetItem(date_str)
+        item.setTextAlignment(Qt.AlignCenter)
+        self.table.setItem(row, col, item)
+
+    def set_time_item(self, row, col, time_str):
+        item = QTableWidgetItem(time_str)
+        item.setTextAlignment(Qt.AlignCenter)
+        self.table.setItem(row, col, item)
