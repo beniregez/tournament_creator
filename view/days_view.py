@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QDateEdit, QTimeEdit,
-    QHeaderView, QToolBar, QAction
+    QHeaderView
 )
 from PyQt5.QtCore import Qt, QDate, QTime
 from PyQt5.QtGui import QKeySequence
@@ -9,7 +9,7 @@ from PyQt5.QtGui import QKeySequence
 class DaysView(QWidget):
     MAX_DAYS = 10
     ROWS = ["Title", "Date", "Location", "Responsible", "Start time"]
-    CELL_WIDTH = 180
+    CELL_WIDTH = 240
     CELL_HEIGHT = 32
 
     def __init__(self, controller=None):
@@ -20,30 +20,6 @@ class DaysView(QWidget):
 
     def init_ui(self):
         layout = QVBoxLayout(self)
-
-        # === Toolbar ===
-        self.toolbar = QToolBar("Tools")
-        copy_action = QAction("Copy", self)
-        copy_action.setShortcut(QKeySequence.Copy)
-        copy_action.triggered.connect(self.copy_selection)
-        self.toolbar.addAction(copy_action)
-
-        paste_action = QAction("Paste", self)
-        paste_action.setShortcut(QKeySequence.Paste)
-        paste_action.triggered.connect(self.paste_selection)
-        self.toolbar.addAction(paste_action)
-
-        cut_action = QAction("Cut", self)
-        cut_action.setShortcut(QKeySequence.Cut)
-        cut_action.triggered.connect(self.cut_selection)
-        self.toolbar.addAction(cut_action)
-
-        delete_action = QAction("Delete", self)
-        delete_action.setShortcut(QKeySequence.Delete)
-        delete_action.triggered.connect(self.clear_selection)
-        self.toolbar.addAction(delete_action)
-
-        layout.addWidget(self.toolbar)
 
         # === Table ===
         self.table = QTableWidget(len(self.ROWS), self.MAX_DAYS)
