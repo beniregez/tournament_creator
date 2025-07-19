@@ -208,11 +208,15 @@ class DaysView(QWidget):
         self.table.setItem(row, col, item)
 
     def set_date_item(self, row, col, date_str):
-        item = QTableWidgetItem(date_str)
-        item.setTextAlignment(Qt.AlignCenter)
-        self.table.setItem(row, col, item)
+        widget = self.table.cellWidget(row, col)
+        if widget and date_str:
+            date = QDate.fromString(date_str, "dd.MM.yyyy")
+            if date.isValid():
+                widget.setDate(date)
 
     def set_time_item(self, row, col, time_str):
-        item = QTableWidgetItem(time_str)
-        item.setTextAlignment(Qt.AlignCenter)
-        self.table.setItem(row, col, item)
+        widget = self.table.cellWidget(row, col)
+        if widget and time_str:
+            time = QTime.fromString(time_str, "HH:mm")
+            if time.isValid():
+                widget.setTime(time)
