@@ -204,7 +204,7 @@ class CategoriesView(QWidget):
     # ========== Model Export/Import ==========
 
     def collect_input_fields(self):
-        data = {}
+        data = []
         for col in range(self.table.columnCount()):
             name_item = self.table.item(self.TITLE_ROW_INDEX, col)
             name = name_item.text().strip() if name_item else ""
@@ -226,24 +226,23 @@ class CategoriesView(QWidget):
                     colors.append(color.name() if color else "")
 
             if name or teams:
-                data[str(col)] = {
+                data.append({
                     "name": name,
                     "group": group,
                     "runs": runs,
                     "teams": teams,
                     "colors": colors
-                }
+                })
         return data
 
     def populate_from_model(self, model):
         categories = model.get_categories()
         self.column_colors = {}
 
-        for col_str, col_data in categories.items():
-            try:
-                col = int(col_str)
-            except ValueError:
-                continue  # ignore invalid keys
+        for col, col_data in enumerate(categories):
+            
+            if col >= self.MAX_CATEGORIES:
+                break
 
             # Name of category
             self.table.setItem(self.TITLE_ROW_INDEX, col, QTableWidgetItem(col_data.get("name", "")))

@@ -33,7 +33,7 @@ class EventsView(QWidget):
         saved_events = self.controller.model.get_events()
 
         group_map = {}
-        for cat in categories_data.values():
+        for cat in categories_data:
             group_id = cat.get("group", "1")
             group_map.setdefault(group_id, []).append(cat["name"])
 

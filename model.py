@@ -1,12 +1,12 @@
 class Model:
     def __init__(self):
         self.days = []
-        self.categories = {}
+        self.categories = []
         self.events = {}
 
     def set_data(self, data:dict):
         self.days = data.get("days", [])
-        self.categories = data.get("categories", {})
+        self.categories = data.get("categories", [])
         self.events = data.get("events", {})
 
     def get_data(self) -> dict:
@@ -25,7 +25,7 @@ class Model:
     def set_categories(self, categories):
         self.categories = categories
     
-    def get_categories(self) -> dict:
+    def get_categories(self) -> list:
         return self.categories
     
     def set_events(self, events):
@@ -37,7 +37,7 @@ class Model:
     # Check all events and set invalid groupings to None.
     def validate_events_against_categories(self):
         valid_group_ids = set()
-        for cat in self.categories.values():
+        for cat in self.categories:
             group = cat.get("group", "None")
             valid_group_ids.add(group)
 
