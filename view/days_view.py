@@ -9,7 +9,7 @@ from PyQt5.QtGui import QKeySequence
 class DaysView(QWidget):
     MAX_DAYS = 10
     ROWS = ["Title", "Date", "Location", "Responsible", "Start time"]
-    CELL_WIDTH = 240
+    CELL_WIDTH = 250
     CELL_HEIGHT = 32
 
     def __init__(self, controller=None):

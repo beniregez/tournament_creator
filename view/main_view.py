@@ -9,7 +9,7 @@ class MainView(QMainWindow):
         super().__init__()
         self.controller = controller
         self.setWindowTitle("Tournament Creator")
-        self.setGeometry(100, 100, 1200, 800)
+        self.setGeometry(100, 100, 1500, 1000)
 
         self.tabs = QTabWidget()
         self.overview_tab = HomeView(controller)
