@@ -32,11 +32,6 @@ class Controller:
     def update_days_from_view(self):
         days = self.view.days_tab.collect_input_fields()
         self.model.set_days(days)
-
-    # Validate and adjust model if necessary
-    def validate_model_after_category_change(self):
-        self.model.validate_events_against_categories()
-        self.model.validate_events_against_days()
     
     # TODO: implement
     def export_to_excel(self, filepath):

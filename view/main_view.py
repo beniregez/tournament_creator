@@ -36,7 +36,6 @@ class MainView(QMainWindow):
         # When leaving the Categories tab: Check consistency
         if prev_index == self.tabs.indexOf(self.categories_tab):
             self.controller.update_categories_from_view()
-            self.controller.validate_model_after_category_change()
 
         # When leaving the Days Tab
         if prev_index == self.tabs.indexOf(self.days_tab):
