@@ -12,14 +12,19 @@ class Controller:
     # Put the data into the model
     def update_model_from_views(self):
          # Get Data from all subviews
+        title = self.view.home_tab.collect_input_fields()
         days = self.view.days_tab.collect_input_fields()
         categories = self.view.categories_tab.collect_input_fields()
         events = self.view.events_tab.collect_input_fields()
         self.model.set_data({
+            "title": title,
             "days": days,
             "categories": categories,
             "events": events
         })
+
+    def update_home_from_view(self):
+        self.title = self.view.home_tab.collect_input_fields()
 
     def update_events_from_view(self):
         events = self.view.events_tab.collect_input_fields()

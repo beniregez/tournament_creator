@@ -12,11 +12,11 @@ class MainView(QMainWindow):
         self.setGeometry(100, 100, 1500, 1000)
 
         self.tabs = QTabWidget()
-        self.overview_tab = HomeView(controller)
+        self.home_tab = HomeView(controller)
         self.categories_tab = CategoriesView(controller)
         self.days_tab = DaysView(controller)
         self.events_tab = EventsView(controller)
-        self.tabs.addTab(self.overview_tab, "Home")
+        self.tabs.addTab(self.home_tab, "Home")
         self.tabs.addTab(self.categories_tab, "Categories")
         self.tabs.addTab(self.days_tab, "Days")
         self.tabs.addTab(self.events_tab, "Events")
@@ -28,6 +28,10 @@ class MainView(QMainWindow):
     def on_tab_changed(self, index):        
         prev_index = getattr(self, "_prev_tab_index", None)
         self._prev_tab_index = index
+
+        # Before leaving the Home tab: Save to model
+        if prev_index == self.tabs.indexOf(self.home_tab):
+            self.controller.update_home_from_view()
 
         # Before leaving the Events tab: Save events!
         if prev_index == self.tabs.indexOf(self.events_tab):
@@ -47,12 +51,14 @@ class MainView(QMainWindow):
             
     def collect_all_inputs(self):
         return {
+            "title": self.home_tab.collect_input_fields(),
             "days": self.days_tab.collect_input_fields(),
             "categories": self.categories_tab.collect_input_fields(),
             "events": self.events_tab.collect_input_fields()
         }
 
     def populate_from_model(self, model):
+        self.home_tab.populate_from_model(model)
         self.days_tab.populate_from_model(model)
         self.categories_tab.populate_from_model(model)
         self.events_tab.populate_from_model(model)
