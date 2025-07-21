@@ -1,0 +1,79 @@
+from dataclasses import dataclass, field
+from typing import List, Optional, Union
+from .match import Match
+
+
+@dataclass
+class Event:
+    duration: int
+
+    def __post_init__(self):
+        if not isinstance(self.duration, int) or self.duration <= 0:
+            raise ValueError("Duration must be a positive integer.")
+
+    def to_dict(self):
+        return {
+            "duration": self.duration
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(duration=data["duration"])
+
+
+@dataclass
+class MatchEvent(Event):
+    matches: List[Match] = field(default_factory=list)
+
+    def __post_init__(self):
+        super().__post_init__()
+        if not all(isinstance(m, Match) for m in self.matches):
+            raise TypeError("All matches must be instances of Match.")
+
+    def to_dict(self):
+        return {
+            "duration": self.duration,
+            "matches": [m.to_dict() for m in self.matches]
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            duration=data["duration"],
+            matches=[Match.from_dict(m) for m in data["matches"]]
+        )
+
+
+@dataclass
+class OtherEvent(Event):
+    label: str
+    bold: bool = False
+    day_index: Optional[int] = None
+    block_index: Optional[int] = None
+    event_index: Optional[int] = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        if not isinstance(self.label, str):
+            raise TypeError("Label must be a string.")
+
+    def to_dict(self):
+        return {
+            "duration": self.duration,
+            "label": self.label,
+            "bold": self.bold,
+            "day_index": self.day_index,
+            "block_index": self.block_index,
+            "event_index": self.event_index
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            duration=data["duration"],
+            label=data["label"],
+            bold=data.get("bold", False),
+            day_index=data.get("day_index"),
+            block_index=data.get("block_index"),
+            event_index=data.get("event_index")
+        )
