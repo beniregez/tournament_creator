@@ -4,6 +4,7 @@ from view.days_view import DaysView
 from view.home_view import HomeView
 from view.events_view import EventsView
 from view.match_dur_view import MatchDurView
+from view.overview_view import OverviewView
 
 class MainView(QMainWindow):
     def __init__(self, controller):
@@ -18,11 +19,13 @@ class MainView(QMainWindow):
         self.match_dur_tab = MatchDurView(controller)
         self.days_tab = DaysView(controller)
         self.events_tab = EventsView(controller)
-        self.tabs.addTab(self.home_tab, "Home")
+        self.overview_tab = OverviewView(controller)
+        self.tabs.addTab(self.home_tab, "Start")
         self.tabs.addTab(self.categories_tab, "Categories")
         self.tabs.addTab(self.match_dur_tab, "Match Durations")
         self.tabs.addTab(self.days_tab, "Days")
         self.tabs.addTab(self.events_tab, "Events")
+        self.tabs.addTab(self.overview_tab, "Overview")
         
         self.tabs.currentChanged.connect(self.on_tab_changed)
 
@@ -60,6 +63,10 @@ class MainView(QMainWindow):
         # When entering the Events tab: Show fields
         if index == self.tabs.indexOf(self.events_tab):
             self.events_tab.populate_from_model(self.controller.model)
+            
+        # When entering the Overview tab: update from model
+        if index == self.tabs.indexOf(self.overview_tab):
+            self.overview_tab.update_ui()
             
     def collect_all_inputs(self):
         return {
