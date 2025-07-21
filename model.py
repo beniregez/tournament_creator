@@ -3,12 +3,14 @@ class Model:
         self.title = ""
         self.days = []
         self.categories = []
+        self.match_durs = {}
         self.events = {}
 
     def set_data(self, data:dict):
         self.title = data.get("title", "")
         self.days = data.get("days", [])
         self.categories = data.get("categories", [])
+        self.match_durs = data.get("match_durs", {})
         self.events = data.get("events", {})
 
     def get_data(self) -> dict:
@@ -16,6 +18,7 @@ class Model:
             "title": self.title,
             "days": self.days,
             "categories": self.categories,
+            "match_durs": self.match_durs,
             "events": self.events
         }
 
@@ -36,6 +39,12 @@ class Model:
     
     def get_categories(self) -> list:
         return self.categories
+    
+    def set_match_durs(self, match_durs):
+        self.match_durs = match_durs
+    
+    def get_match_durs(self) -> dict:
+        return self.match_durs
     
     def set_events(self, events):
         self.events = events

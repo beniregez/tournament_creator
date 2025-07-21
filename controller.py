@@ -11,17 +11,11 @@ class Controller:
 
     # Put the data into the model
     def update_model_from_views(self):
-         # Get Data from all subviews
-        title = self.view.home_tab.collect_input_fields()
-        days = self.view.days_tab.collect_input_fields()
-        categories = self.view.categories_tab.collect_input_fields()
-        events = self.view.events_tab.collect_input_fields()
-        self.model.set_data({
-            "title": title,
-            "days": days,
-            "categories": categories,
-            "events": events
-        })
+        self.update_home_from_view()
+        self.update_days_from_view()
+        self.update_categories_from_view()
+        self.update_match_durs_from_view()
+        self.update_events_from_view()
 
     def update_home_from_view(self):
         self.title = self.view.home_tab.collect_input_fields()
@@ -34,9 +28,27 @@ class Controller:
         categories = self.view.categories_tab.collect_input_fields()
         self.model.set_categories(categories)
 
+    def update_match_durs_from_view(self):
+        match_durs = self.view.match_dur_tab.collect_input_fields()
+        self.model.set_match_durs(match_durs)
+
     def update_days_from_view(self):
         days = self.view.days_tab.collect_input_fields()
         self.model.set_days(days)
+    
+    
+    def validate_grouping_durs_against_categories(self):
+        curr_match_durs = self.model.get_match_durs()
+        valid_group_ids = sorted(set(str(cat["group"]) for cat in self.model.get_categories()))
+        cleaned_match_durs = {}
+
+        for group_id in valid_group_ids:
+            if group_id in curr_match_durs:
+                cleaned_match_durs[group_id] = curr_match_durs[group_id]
+            else:
+                cleaned_match_durs[group_id] = 1 # Default for new Groupings
+
+        self.model.set_match_durs(cleaned_match_durs)
     
     # TODO: implement
     def export_to_excel(self, filepath):
