@@ -5,6 +5,7 @@ from view.home_view import HomeView
 from view.events_view import EventsView
 from view.match_dur_view import MatchDurView
 from view.overview_view import OverviewView
+from view.create_tourn_view import CreateTourn
 
 class MainView(QMainWindow):
     def __init__(self, controller):
@@ -20,12 +21,14 @@ class MainView(QMainWindow):
         self.days_tab = DaysView(controller)
         self.events_tab = EventsView(controller)
         self.overview_tab = OverviewView(controller)
+        self.create_tourn_tab = CreateTourn(controller)
         self.tabs.addTab(self.home_tab, "Start")
         self.tabs.addTab(self.categories_tab, "Categories")
         self.tabs.addTab(self.match_dur_tab, "Match Durations")
         self.tabs.addTab(self.days_tab, "Days")
         self.tabs.addTab(self.events_tab, "Events")
         self.tabs.addTab(self.overview_tab, "Overview")
+        self.tabs.addTab(self.create_tourn_tab, "Create")
         
         self.tabs.currentChanged.connect(self.on_tab_changed)
 
