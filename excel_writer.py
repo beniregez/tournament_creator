@@ -1,2 +1,0 @@
-class ExcelWriter:
-    pass

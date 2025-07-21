@@ -1,7 +1,6 @@
 import json
 from view.main_view import MainView
-from model import Model
-from excel_writer import ExcelWriter
+from model.model import Model
 
 class Controller:
     def __init__(self):
