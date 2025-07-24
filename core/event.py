@@ -43,14 +43,14 @@ class MatchEvent(Event):
             matches=[Match.from_dict(m) for m in data["matches"]]
         )
 
-
 @dataclass
 class OtherEvent(Event):
     label: str
     bold: bool = False
-    day_index: Optional[int] = None
-    block_index: Optional[int] = None
-    event_index: Optional[int] = None
+    color: Optional[str] = None
+    day_index: Optional[int] = None     # 0 stands for 'takes place at all days'
+    bef_dur_aft: Optional[str] = None   # 'before', 'during' or 'after'
+    dur_index: Optional[int] = None     # indicates after how many match events it takes place.
 
     def __post_init__(self):
         super().__post_init__()
@@ -62,9 +62,10 @@ class OtherEvent(Event):
             "duration": self.duration,
             "label": self.label,
             "bold": self.bold,
+            "color": self.color,
             "day_index": self.day_index,
-            "block_index": self.block_index,
-            "event_index": self.event_index
+            "bef_dur_aft": self.bef_dur_aft,
+            "dur_index": self.dur_index
         }
 
     @classmethod
@@ -73,7 +74,8 @@ class OtherEvent(Event):
             duration=data["duration"],
             label=data["label"],
             bold=data.get("bold", False),
+            color=data.get("color"),
             day_index=data.get("day_index"),
-            block_index=data.get("block_index"),
-            event_index=data.get("event_index")
+            bef_dur_aft=data.get("bef_dur_aft"),
+            dur_index=data.get("dur_index")
         )

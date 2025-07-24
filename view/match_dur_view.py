@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
+from core import Category
+
 class MatchDurView(QWidget):
     def __init__(self, controller):
         super().__init__()
@@ -33,10 +35,10 @@ class MatchDurView(QWidget):
                             sub_widget.deleteLater()
 
         # Decide Groupings
-        group_ids = sorted(set(int(cat["group"]) for cat in model.categories))
-
+        group_ids = sorted(set(cat.group for cat in model.categories))
+        
         for group_id in group_ids:
-            cat_names = [cat["name"] for cat in model.categories if int(cat["group"]) == group_id]
+            cat_names = [cat.name for cat in model.get_categories() if int(cat.group) == group_id]
             description = f"Group {group_id}: " + ", ".join(cat_names)
 
             row_layout = QHBoxLayout()

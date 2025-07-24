@@ -1,3 +1,5 @@
+from core import OtherEvent, Team, Category
+
 class Model:
     def __init__(self):
         self.tournament_info = {}
@@ -5,13 +7,16 @@ class Model:
         self.categories = []
         self.match_durs = {}
         self.events = {}
-
-    def set_data(self, data:dict):
+    
+    def set_data(self, data: dict):
         self.tournament_info = data.get("tournament_info", {})
         self.days = data.get("days", [])
-        self.categories = data.get("categories", [])
+        self.categories = [Category.from_dict(cat) for cat in data["categories"]]
         self.match_durs = data.get("match_durs", {})
-        self.events = data.get("events", {})
+        self.events = {
+            group_id: [OtherEvent.from_dict(e) for e in group_events]
+            for group_id, group_events in data.get("events", {}).items()
+        }
 
     def get_data(self) -> dict:
         return {
@@ -19,9 +24,24 @@ class Model:
             "days": self.days,
             "categories": self.categories,
             "match_durs": self.match_durs,
-            "events": self.events
+            "events": {
+                group_id: [e.to_dict() for e in group_events]
+                for group_id, group_events in self.events.items()
+            }
         }
 
+    def to_serializable_dict(self) -> dict:
+        return {
+            "tournament_info": self.tournament_info,
+            "days": self.days,
+            "categories": [category.to_dict() for category in self.categories],
+            "match_durs": self.match_durs,
+            "events": {
+                group_id: [event.to_dict() for event in group_events]
+                for group_id, group_events in self.events.items()
+            }
+        }
+    
     def set_tournament_info(self, tournament_info):
         self.tournament_info = tournament_info
         

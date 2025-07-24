@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QColor, QBrush, QKeySequence, QFont
 from PyQt5.QtCore import Qt
 
+from core import Team, Category
+
 
 class CategoriesView(QWidget):
     MAX_CATEGORIES = 10
@@ -16,7 +18,7 @@ class CategoriesView(QWidget):
     TITLE_ROW_INDEX = 0
     GROUP_ROW_INDEX = 1
     RUNS_ROW_INDEX = 2
-    TEAM_ROW_OFFSET = 3  # Teams beginnen ab dieser Zeile
+    TEAM_ROW_OFFSET = 3  # Teams start at this row
 
     def __init__(self, controller=None):
         super().__init__()
@@ -203,8 +205,8 @@ class CategoriesView(QWidget):
 
     # ========== Model Export/Import ==========
 
-    def collect_input_fields(self):
-        data = []
+    def collect_input_fields(self) -> list[Category]:
+        categories = []
         for col in range(self.table.columnCount()):
             name_item = self.table.item(self.TITLE_ROW_INDEX, col)
             name = name_item.text().strip() if name_item else ""
@@ -216,42 +218,36 @@ class CategoriesView(QWidget):
             runs = str(runs_widget.value()) if runs_widget else ""
 
             teams = []
-            colors = []
             for row in range(self.TEAM_ROW_OFFSET, self.table.rowCount()):
                 item = self.table.item(row, col)
                 text = item.text().strip() if item else ""
                 if text:
-                    teams.append(text)
                     color = self.column_colors.get((row, col))
-                    colors.append(color.name() if color else "")
+                    color_hex = color.name() if color else "#FFFFFF"
+                    teams.append(Team(name=text, color=color_hex))
 
             if name or teams:
-                data.append({
-                    "name": name,
-                    "group": group,
-                    "runs": runs,
-                    "teams": teams,
-                    "colors": colors
-                })
-        return data
+                cat = Category(name=name, group=group, runs=runs, teams=teams)
+                categories.append(cat)
 
+        return categories
+    
     def populate_from_model(self, model):
         categories = model.get_categories()
         self.column_colors = {}
 
-        for col, col_data in enumerate(categories):
-            
+        for col, category in enumerate(categories):
             if col >= self.MAX_CATEGORIES:
                 break
 
-            # Name of category
-            self.table.setItem(self.TITLE_ROW_INDEX, col, QTableWidgetItem(col_data.get("name", "")))
+            # Category name
+            self.table.setItem(self.TITLE_ROW_INDEX, col, QTableWidgetItem(category.name))
 
             # Group
             group_spin = self.table.cellWidget(self.GROUP_ROW_INDEX, col)
             if group_spin:
                 try:
-                    group_spin.setValue(int(col_data.get("group", 1)))
+                    group_spin.setValue(int(category.group))
                 except (ValueError, TypeError):
                     pass
 
@@ -259,16 +255,16 @@ class CategoriesView(QWidget):
             runs_spin = self.table.cellWidget(self.RUNS_ROW_INDEX, col)
             if runs_spin:
                 try:
-                    runs_spin.setValue(int(col_data.get("runs", 1)))
+                    runs_spin.setValue(int(category.runs))
                 except (ValueError, TypeError):
                     pass
 
-            # Teams & Colors
-            for i, (team, color_hex) in enumerate(zip(col_data.get("teams", []), col_data.get("colors", []))):
+            # Teams
+            for i, team in enumerate(category.teams):
                 row = self.TEAM_ROW_OFFSET + i
-                item = QTableWidgetItem(team)
-                if color_hex:
-                    color = QColor(color_hex)
+                item = QTableWidgetItem(team.name)
+                if team.color:
+                    color = QColor(team.color)
                     item.setBackground(QBrush(color))
                     self.column_colors[(row, col)] = color
                 self.table.setItem(row, col, item)

@@ -44,16 +44,16 @@ class OverviewView(QWidget):
 
         # Category data. Start at column 1, row 0.
         for col, cat in enumerate(categories, start=1):
-            teams = cat.get("teams", [])
+            teams = cat.teams
             num_teams = len(teams)
-            group = cat.get("group", "")
-            runs = int(cat.get("runs", "1"))
+            group = cat.group
+            runs = int(cat.runs)
             duration = match_durs.get(group, "N/A")
             matches_per_team = (num_teams - 1) * runs if num_teams > 1 else 0
             matches_per_day = round(matches_per_team / num_days, 2) if num_days > 0 else "N/A"
 
             values = [
-                cat.get("name", ""),
+                cat.name,
                 str(num_teams),
                 group,
                 str(runs),

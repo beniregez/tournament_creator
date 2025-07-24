@@ -38,7 +38,7 @@ class Controller:
     
     def validate_grouping_durs_against_categories(self):
         curr_match_durs = self.model.get_match_durs()
-        valid_group_ids = sorted(set(str(cat["group"]) for cat in self.model.get_categories()))
+        valid_group_ids = sorted(set(str(cat.group) for cat in self.model.get_categories()))
         cleaned_match_durs = {}
 
         for group_id in valid_group_ids:
@@ -57,7 +57,7 @@ class Controller:
     def save_model_to_json(self, filename):
         self.update_model_from_views() # Before saving: Update model
         with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(self.model.get_data(), f, indent=4, ensure_ascii=False)
+            json.dump(self.model.to_serializable_dict(), f, indent=4, ensure_ascii=False)
 
     def load_model_from_json(self, filename):
         with open(filename, 'r', encoding='utf-8') as f:
