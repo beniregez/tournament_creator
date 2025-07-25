@@ -4,7 +4,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../src/')))
 
 from core import Team, Match, Category
-from utils.scheduler.rr_run import create_rr_run
+from utils.scheduler.rr_run import create_rr_run, create_n_rr_runs
 
 
 def test_create_rr_run():
@@ -30,3 +30,15 @@ def test_create_rr_run():
             assert isinstance(m, Match)
         assert len(row) == 3
         
+def test_create_n_rr_runs():
+    teams = []
+    for i in range(0,5):
+        teams.append(Team(str(i), "#FFFFFF", None))
+    cat = Category("", "", 2, teams)
+
+    result = create_n_rr_runs(cat)
+    assert isinstance(result, list)
+    
+    assert result[0][0].team1 == result[5][0].team2
+    
+    assert len(result) == 10

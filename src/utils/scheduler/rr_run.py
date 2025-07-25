@@ -1,7 +1,7 @@
 import copy
 from core import Team, Match, Category
 
-def create_rr_run(cat: Category):
+def create_rr_run(cat: Category, alter_home_away: bool = False):
     teams = copy.copy(cat.teams)
     if len(teams) % 2 == 1:
         teams.append(None) # If odd number: Append with a "dummy" team
@@ -16,9 +16,24 @@ def create_rr_run(cat: Category):
             team1 = teams[i]
             team2 = teams[n - 1 - i]
             if team1 is not None and team2 is not None:
-                rr_matches.append(Match(team1, team2))
+                if alter_home_away:
+                    rr_matches.append(Match(team2, team1))
+                else:
+                    rr_matches.append(Match(team1, team2))
         rr_run.append(rr_matches)
 
-        # Rotate teams (without first team)
+        # Rotate teams (without first team) for next round robin
         teams = [teams[0]] + [teams[-1]] + teams[1:-1]
     return rr_run
+
+def create_n_rr_runs(cat: Category, alter_home_away: bool = False):
+    rr_runs = []
+    
+    for run_idx in range(cat.runs):
+        if run_idx % 2 == 0:
+            rr_run = create_rr_run(cat, False)
+        else:
+            rr_run = create_rr_run(cat, True)
+        rr_runs.extend(rr_run)
+    
+    return rr_runs
