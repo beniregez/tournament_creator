@@ -6,14 +6,16 @@ class Model:
         self.days = []
         self.categories = []
         self.match_durs = {}
-        self.events = {}
+        self.group_info = {}
+        self.other_events = {}
     
     def set_data(self, data: dict):
         self.tournament_info = data.get("tournament_info", {})
         self.days = data.get("days", [])
         self.categories = [Category.from_dict(cat) for cat in data["categories"]]
         self.match_durs = data.get("match_durs", {})
-        self.events = {
+        self.group_info = data.get("group_info", {})
+        self.other_events = {
             group_id: [OtherEvent.from_dict(e) for e in group_events]
             for group_id, group_events in data.get("events", {}).items()
         }
@@ -24,9 +26,10 @@ class Model:
             "days": self.days,
             "categories": self.categories,
             "match_durs": self.match_durs,
+            "group_info": self.group_info,
             "events": {
                 group_id: [e.to_dict() for e in group_events]
-                for group_id, group_events in self.events.items()
+                for group_id, group_events in self.other_events.items()
             }
         }
 
@@ -36,9 +39,10 @@ class Model:
             "days": self.days,
             "categories": [category.to_dict() for category in self.categories],
             "match_durs": self.match_durs,
+            "group_info": self.group_info,
             "events": {
                 group_id: [event.to_dict() for event in group_events]
-                for group_id, group_events in self.events.items()
+                for group_id, group_events in self.other_events.items()
             }
         }
     
@@ -66,8 +70,14 @@ class Model:
     def get_match_durs(self) -> dict:
         return self.match_durs
     
-    def set_events(self, events):
-        self.events = events
+    def set_group_info(self, group_info):
+        self.group_info = group_info
         
-    def get_events(self) -> dict:
-        return self.events
+    def get_group_info(self) -> dict:
+        return self.group_info
+    
+    def set_other_events(self, events):
+        self.other_events = events
+        
+    def get_other_events(self) -> dict:
+        return self.other_events

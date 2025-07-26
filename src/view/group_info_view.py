@@ -3,23 +3,19 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
-from core import Category
-
-class MatchDurView(QWidget):
+class GroupInfoView(QWidget):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
-        self.model = None
-        self.group_fields = {}
+        self.group_fields = {}  # group_id -> {"match_dur": QSpinBox, "num_fields": QSpinBox}
 
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
-    
+
     def populate_from_model(self, model):
-        self.model = model
         self.group_fields.clear()
 
-        # Cleanup: Delete Widgets and Layouts
+        # Clear UI
         while self.layout.count():
             item = self.layout.takeAt(0)
             widget = item.widget()
@@ -34,32 +30,46 @@ class MatchDurView(QWidget):
                         if sub_widget:
                             sub_widget.deleteLater()
 
-        # Decide Groupings
+        # Create fields for each group
         group_ids = sorted(set(cat.group for cat in model.categories))
-        
+
+        group_info = model.get_group_info()
+
         for group_id in group_ids:
+            group_id_str = str(group_id)
             cat_names = [cat.name for cat in model.get_categories() if int(cat.group) == group_id]
             description = f"Group {group_id}: " + ", ".join(cat_names)
 
             row_layout = QHBoxLayout()
-
             label = QLabel(description)
-            label.setMinimumWidth(400)
+            label.setMinimumWidth(300)
             row_layout.addWidget(label)
 
-            spinbox = QSpinBox()
-            spinbox.setMinimum(1)
-            spinbox.setMaximum(999)
-            # Get duration from model
-            group_id_str = str(group_id)
-            saved_value = model.get_match_durs().get(group_id_str, 15)
-            spinbox.setValue(saved_value)
-            self.group_fields[group_id] = spinbox
+            # Match Duration
+            spin_match = QSpinBox()
+            spin_match.setMinimum(1)
+            spin_match.setMaximum(999)
+            spin_match.setValue(group_info.get(group_id_str, {}).get("match_dur", 1))
+            row_layout.addWidget(QLabel("Match Duration:"))
+            row_layout.addWidget(spin_match)
 
-            row_layout.addWidget(spinbox)
+            # Number of Fields
+            spin_fields = QSpinBox()
+            spin_fields.setMinimum(1)
+            spin_fields.setMaximum(2)
+            spin_fields.setValue(group_info.get(group_id_str, {}).get("num_fields", 1))
+            row_layout.addWidget(QLabel("Fields:"))
+            row_layout.addWidget(spin_fields)
+
+            self.group_fields[group_id] = {"match_dur": spin_match, "num_fields": spin_fields}
             row_layout.addStretch()
-
             self.layout.addLayout(row_layout)
-    
+
     def collect_input_fields(self):
-        return {str(group_id): self.group_fields[group_id].value() for group_id in self.group_fields}
+        group_info = {}
+        for group_id, widgets in self.group_fields.items():
+            group_info[str(group_id)] = {
+                "match_dur": widgets["match_dur"].value(),
+                "num_fields": widgets["num_fields"].value()
+            }
+        return group_info

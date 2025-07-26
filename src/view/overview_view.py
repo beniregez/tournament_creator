@@ -21,7 +21,7 @@ class OverviewView(QWidget):
 
         model = self.controller.model
         categories = model.get_categories()
-        match_durs = model.get_match_durs()
+        group_info = model.get_group_info()
         num_days = len(model.get_days())
 
         metrics = [
@@ -48,7 +48,7 @@ class OverviewView(QWidget):
             num_teams = len(teams)
             group = cat.group
             runs = int(cat.runs)
-            duration = match_durs.get(group, "N/A")
+            duration = group_info.get(group, {}).get("match_dur", "N/A")
             matches_per_team = (num_teams - 1) * runs if num_teams > 1 else 0
             matches_per_day = round(matches_per_team / num_days, 2) if num_days > 0 else "N/A"
 

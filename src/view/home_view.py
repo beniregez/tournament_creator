@@ -29,25 +29,6 @@ class HomeView(QWidget):
         main_layout.addLayout(title_row)
         main_layout.addSpacing(25)
 
-        # Number of match fields
-        match_field_layout = QHBoxLayout()
-        match_field_layout.setAlignment(Qt.AlignLeft)
-        match_field_layout.addWidget(QLabel("Number of match fields:"))
-
-        self.field_spinbox = QSpinBox()
-        self.field_spinbox.valueChanged.connect(self.update_model)
-        self.field_spinbox.setMinimumHeight(30)
-        self.field_spinbox.setRange(1, 2)  # TODO: implement more than two fields
-        self.field_spinbox.setFixedWidth(60)
-        match_field_layout.addSpacing(10)
-        match_field_layout.addWidget(self.field_spinbox)
-
-        match_field_layout.addSpacing(20)
-        match_field_layout.addWidget(QLabel("Only 1 or 2 fields implemented at this moment"))
-        
-        main_layout.addLayout(match_field_layout)
-        main_layout.addSpacing(25)
-
         # Save and Load Buttons
         button_layout = QHBoxLayout()
         self.save_btn = QPushButton("Save as JSON")
@@ -66,13 +47,11 @@ class HomeView(QWidget):
     def collect_input_fields(self):
         return {
             "title": self.title_input.text().strip(),
-            "match_fields": self.field_spinbox.value()
         }
 
     def populate_from_model(self, model):
         data = model.get_tournament_info()
         self.title_input.setText(data.get("title", ""))
-        self.field_spinbox.setValue(data.get("match_fields", 1))
 
     def update_model(self):
         self.controller.model.set_tournament_info(self.collect_input_fields())

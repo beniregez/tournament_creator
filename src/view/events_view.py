@@ -50,7 +50,7 @@ class EventsView(QWidget):
 
         self.group_tables.clear()
         group_ids = sorted(set(int(cat.group) for cat in model.get_categories()))
-        event_data = model.get_events()
+        event_data = model.get_other_events()
 
         for group_id in group_ids:
             group_names = [cat.name for cat in model.categories if int(cat.group) == group_id]
