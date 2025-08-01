@@ -1,3 +1,4 @@
+from typing import List
 from core import OtherEvent, Team, Category
 
 class Model:
@@ -63,6 +64,9 @@ class Model:
     
     def get_categories(self) -> list:
         return self.categories
+
+    def get_unique_groups(self) -> List[str]:
+        return sorted({category.group for category in self.categories})
     
     def set_match_durs(self, match_durs):
         self.match_durs = match_durs
