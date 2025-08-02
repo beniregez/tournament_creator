@@ -36,7 +36,7 @@ def test_create_n_rr_runs():
         teams.append(Team(str(i), "#FFFFFF", None))
     cat = Category("", "", 2, teams)
 
-    result = create_n_rr_runs(cat)
+    result = create_n_rr_runs(cat, True)
     assert isinstance(result, list)
     
     assert result[0][0].team1 == result[5][0].team2
