@@ -26,7 +26,7 @@ def create_rr_run(cat: Category, alter_home_away: bool = False):
         teams = [teams[0]] + [teams[-1]] + teams[1:-1]
     return rr_run
 
-def create_n_rr_runs(cat: Category, alter_home_away: bool = False):
+def create_n_rr_runs(cat: Category, alter_home_away: bool = True):
     rr_runs = []
     
     if alter_home_away:
