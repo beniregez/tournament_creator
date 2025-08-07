@@ -3,7 +3,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../src/')))
 
-from core import OtherEvent, EventBlock, Category
+from core import OtherEvent, EventBlock, Category, Team
 from utils.scheduler.scheduler import create_schedule
 from model.model import Model
 
@@ -23,7 +23,7 @@ def test_create_schedule_other_events():
             group = 2
         else:
             group = 3
-        cats.append(Category("", str(group), "1", []))
+        cats.append(Category("", str(group), 1, []))
     test_model.set_categories(cats)
         
     # Set after_events in model
@@ -81,3 +81,45 @@ def test_create_schedule_other_events():
         else:
             assert day[2].number_of_events() == 1
             assert day[2].get_event(4).duration == 15
+
+def test_create_schedule_one_category():
+    test_model = Model()
+
+    # Set days in model
+    days = [0, 1, 2, 3, 4]
+    test_model.set_days(days)
+
+    # Set categories in model
+    cats = []
+    cats.append(Category("Open", "1", 2, _create_n_teams(11)))
+    cats.append(Category("Foo", "2", 1, _create_n_teams(12)))
+    test_model.set_categories(cats)
+
+    # Set grouping infos in model
+    group_info = {}
+    for i in range (1, 3):
+        group_info[f"{i}"] = {
+            "match_dur": 15,
+            "num_fields": 2
+        }
+    test_model.set_group_info(group_info)
+    
+    tournament = create_schedule(test_model)
+
+    for day in tournament:
+        assert day[0].number_of_events() == 11
+    
+    event_counter = 0
+    for idx, day in enumerate(tournament):
+        event_counter += day[1].number_of_events()
+        if idx <= 2:
+            assert day[1].number_of_events() == 7
+        else:
+            assert day[1].number_of_events() == 6
+    assert event_counter == 33
+
+def _create_n_teams(num_teams: int) -> list:
+    teams = []
+    for i in range(num_teams):
+        teams.append(Team(f"team{i}", "", None))
+    return teams

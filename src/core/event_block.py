@@ -76,6 +76,18 @@ class EventBlock:
         else:
             self.events.insert(idx, event)
 
+    def add_event_to_next_available_slot(self, event: EventType) -> None:
+        if not isinstance(event, (MatchEvent, OtherEvent)):
+            raise TypeError("Only MatchEvent or OtherEvent instances are allowed.")
+        
+        try:
+            # Find first None-Slot
+            index = self.events.index(None)
+            self.events[index] = event
+        except ValueError:
+            # If no Nones: Append at the end
+            self.events.append(event)
+
     def get_valid_events(self) -> List[EventType]:
         return [event for event in self.events if event is not None]
 

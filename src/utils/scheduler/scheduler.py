@@ -1,6 +1,6 @@
 from model.model import Model
-# from rr_run import create_n_rr_runs
-from core import EventBlock
+from .rr_run import create_n_rr_runs
+from core import EventBlock, Category, Team, Match, MatchEvent
 
 def create_schedule(model: Model):
     num_days = len(model.get_days())
@@ -12,7 +12,7 @@ def create_schedule(model: Model):
     # which must be added to a dedicated EventBlock.
     num_blocks = len(model.get_unique_groups()) + 1
     for day in tournament:
-        for i in range(num_blocks):
+        for _ in range(num_blocks):
             day.append(EventBlock())
 
     # 3. Fill in OtherEvents
@@ -51,9 +51,75 @@ def create_schedule(model: Model):
                 else:
                     tournament[e.day_index - 1][group_idx].add_event_after_n_nones(e.dur_index, e)
     
+    # 4. Create rr_runs for every category
+    categories = model.get_categories()
+    rr_runs = []
+    for cat in categories:
+        rr_runs.append(create_n_rr_runs(cat, True))
 
-    # TODO 4. Fill with MatchEvents
-    
-    # TODO 5. 'Flatten' Day (create 1 event list per day)
+    # TODO 5. Merge and distribute runs / matches of categories in same group on EventBlocks (starting at the shortest day)
+    group_info = model.get_group_info()
+    for group_idx, group in enumerate(group_info):
+        # collect category indices in the current group
+        cat_indices = []
+        for cat_idx, cat in enumerate(categories):
+            if cat.group == group:
+                cat_indices.append(cat_idx)
 
+        curr_group_info = group_info[group]
+        match_dur = curr_group_info["match_dur"]
+        num_fields = curr_group_info["num_fields"]
+
+        # Case 1: One single category in group
+        # TODO: Check for double missions and apply wished strategy:
+        # (a) empty fields, (b) break, (c) indifference
+        if len(cat_indices) == 1:
+            cat_idx = cat_indices[0]
+
+            flattened_matches = flatten_2d_list(rr_runs[cat_idx])   # Matches as a 1D-list
+            num_matches = len(flattened_matches)
+            num_match_events = num_matches // num_fields
+            num_remain_matches =  num_matches - (num_match_events * num_fields)
+
+            match_events_per_day = num_match_events // num_days
+            num_remain_match_events = num_match_events - (match_events_per_day * num_days)
+
+            match_idx = 0
+
+            for day_idx in range(num_days):
+                for m_e in range(match_events_per_day):
+                    curr_event = MatchEvent(match_dur, [])
+                    for m in range(num_fields):
+                        curr_event.matches.append(flattened_matches[match_idx])
+                        match_idx += 1
+                    tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                # (i) EITHER append an entire additional match_event (if remaining)
+                if num_remain_match_events > 0:
+                    curr_event = MatchEvent(match_dur, [])
+                    for m in range(num_fields):
+                        curr_event.matches.append(flattened_matches[match_idx])
+                        match_idx += 1
+                    num_remain_match_events -= 1
+                    tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                # (ii) OR append a partial match_event (if remaining)
+                elif num_remain_matches > 0:
+                    curr_event = MatchEvent(match_dur, [])
+                    for m in range(num_remain_matches):
+                        curr_event.matches.append(flattened_matches[match_idx])
+                        match_idx += 1
+                    tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                    num_remain_matches = 0  # No remaining matches that do not fill an entire match event
+
+        # Case 2: Two or more categories in group
+        elif len(cat_indices) > 1:
+            pass
+
+    # TODO: flatten all blocks (remove nones).
     return tournament
+
+def flatten_2d_list(rr_runs: list) -> list:
+    matches = []
+    for rr in rr_runs:
+        for match in rr:
+            matches.append(match)
+    return matches
