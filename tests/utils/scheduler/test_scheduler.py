@@ -118,6 +118,51 @@ def test_create_schedule_one_category():
             assert day[1].number_of_events() == 6
     assert event_counter == 33
 
+def test_create_schedule_two_categories():
+    test_model = Model()
+
+    # Set days in model
+    days = [0, 1, 2, 3, 4]
+    test_model.set_days(days)
+
+    # Set categories in model
+    cats = []
+    cats.append(Category("U9", "1", 8, _create_n_teams(3)))
+    cats.append(Category("U11", "2", 5, _create_n_teams(5)))
+    cats.append(Category("U13", "1", 3, _create_n_teams(8)))
+    cats.append(Category("U16", "2", 4, _create_n_teams(7)))
+    test_model.set_categories(cats)
+
+    # Set grouping infos in model
+    group_info = {}
+    for i in range (1, 3):
+        group_info[f"{i}"] = {
+            "match_dur": 15,
+            "num_fields": 2
+        }
+    test_model.set_group_info(group_info)
+    
+    tournament = create_schedule(test_model)
+
+    for idx, day in enumerate(tournament):
+        if idx == 0:
+            assert day[0].number_of_matches() == 25
+            assert day[0].number_of_events() == 13
+        elif idx < 4:
+            assert day[0].number_of_matches() == 21
+            assert day[0].number_of_events() == 11
+        elif idx == 4:
+            assert day[0].number_of_matches() == 20
+            assert day[0].number_of_events() == 10
+
+    for idx, day in enumerate(tournament):
+        if idx <= 2:
+            assert day[1].number_of_events() == 14
+            assert day[1].number_of_matches() == 28
+        else:
+            assert day[1].number_of_events() == 13
+            assert day[1].number_of_matches() == 25
+
 def _create_n_teams(num_teams: int) -> list:
     teams = []
     for i in range(num_teams):

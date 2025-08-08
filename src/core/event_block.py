@@ -97,3 +97,5 @@ class EventBlock:
     def number_of_events(self) -> int:
         return sum(1 for event in self.events if event is not None)
     
+    def number_of_matches(self) -> int:
+        return sum(len(event.matches) for event in self.events if isinstance(event, MatchEvent))

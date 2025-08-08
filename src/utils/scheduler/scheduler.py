@@ -1,3 +1,5 @@
+import math
+
 from model.model import Model
 from .rr_run import create_n_rr_runs
 from core import EventBlock, Category, Team, Match, MatchEvent
@@ -52,10 +54,18 @@ def create_schedule(model: Model):
                     tournament[e.day_index - 1][group_idx].add_event_after_n_nones(e.dur_index, e)
     
     # 4. Create rr_runs for every category
-    categories = model.get_categories()
+    categories = model.get_categories().copy()
     rr_runs = []
     for cat in categories:
-        rr_runs.append(create_n_rr_runs(cat, True))
+        rr_list = create_n_rr_runs(cat, True)
+        rr_runs.append(rr_list)
+        cat.rr_runs = rr_list
+        cat.matches = flatten_2d_list(rr_list)
+        # Add metrics to category
+        cat.num_matches_per_rr = len(cat.teams) // 2
+        cat.num_rr_per_day = len(rr_list) / num_days
+        cat.num_rr_per_day_floored = math.floor(cat.num_rr_per_day)
+        cat.num_rr_remaining = len(cat.rr_runs) - (num_days * cat.num_rr_per_day_floored)
 
     # TODO 5. Merge and distribute runs / matches of categories in same group on EventBlocks (starting at the shortest day)
     group_info = model.get_group_info()
@@ -110,9 +120,47 @@ def create_schedule(model: Model):
                     tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
                     num_remain_matches = 0  # No remaining matches that do not fill an entire match event
 
-        # Case 2: Two or more categories in group
+
         elif len(cat_indices) > 1:
-            pass
+            group_cats = [categories[c] for c in cat_indices]
+            group_cats_sorted = sorted(group_cats, key=lambda cat: cat.num_rr_per_day) # Sort by rr_per_day
+
+            min_rr = min(cat.num_rr_per_day for cat in group_cats_sorted)
+            max_rr = max(cat.num_rr_per_day for cat in group_cats_sorted)
+            max_min_diff = max_rr - min_rr
+
+            # Case 2a: All categories have enough similar rr_per_day
+            # Approach: Only append entire rr rounds
+            if max_min_diff < 1.001:
+                match_indices = [0 for _ in range(len(group_cats_sorted))]
+
+                for day_idx in range(num_days):
+                    curr_event = MatchEvent(match_dur, [])
+                    # Append regular rrs for each cat
+                    for rr_idx in range(group_cats_sorted[-1].num_rr_per_day_floored):
+                        for cat_idx, cat in enumerate(group_cats_sorted):
+                            if rr_idx < cat.num_rr_per_day_floored:    # Check if cat has regular rrs left
+                                for m in range(cat.num_matches_per_rr):
+                                    curr_event.matches.append(cat.matches[match_indices[cat_idx]])
+                                    match_indices[cat_idx] += 1
+                                    if len(curr_event.matches) == num_fields:
+                                        tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                                        curr_event = MatchEvent(match_dur, [])
+                    # Append another if cat has remaining rr
+                    for cat_idx, cat in enumerate(group_cats_sorted):
+                        if cat.num_rr_remaining > 0:    # Check if cat has remaining rrs left
+                            for m in range(cat.num_matches_per_rr):
+                                curr_event.matches.append(cat.matches[match_indices[cat_idx]])
+                                match_indices[cat_idx] += 1
+                                if len(curr_event.matches) == num_fields:
+                                    tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                                    curr_event = MatchEvent(match_dur, [])
+                            cat.num_rr_remaining -= 1
+                    # If there remains a partial MatchEvent: Append it to the tournament too
+                    if len(curr_event.matches) > 0:
+                        tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+
+            # TODO Case 2b: rr_per_day values are too different
 
     # TODO: flatten all blocks (remove nones).
     return tournament
