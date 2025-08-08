@@ -162,7 +162,10 @@ def create_schedule(model: Model):
 
             # TODO Case 2b: rr_per_day values are too different
 
-    # TODO: flatten all blocks (remove nones).
+    # 6. Compact all blocks (remove nones).
+    for day in tournament:
+        for block in day:
+            block.events = block.get_valid_events()
     return tournament
 
 def flatten_2d_list(rr_runs: list) -> list:

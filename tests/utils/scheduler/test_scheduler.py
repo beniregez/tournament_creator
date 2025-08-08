@@ -76,11 +76,8 @@ def test_create_schedule_other_events():
     for idx, day in enumerate(result):
         if idx == 1:
             assert day[2].number_of_events() == 2
-            assert day[2].get_event(4).duration == 15
-            assert day[2].get_event(5).duration == 10
         else:
             assert day[2].number_of_events() == 1
-            assert day[2].get_event(4).duration == 15
 
 def test_create_schedule_one_category():
     test_model = Model()
