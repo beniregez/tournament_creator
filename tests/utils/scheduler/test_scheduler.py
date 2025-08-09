@@ -1,6 +1,7 @@
 import pytest
 import sys
 import os
+from typing import List
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../src/')))
 
 from core import OtherEvent, EventBlock, Category, Team
@@ -153,15 +154,78 @@ def test_create_schedule_two_categories():
             assert day[0].number_of_events() == 10
 
     for idx, day in enumerate(tournament):
-        if idx <= 2:
-            assert day[1].number_of_events() == 14
-            assert day[1].number_of_matches() == 28
-        else:
+        if idx == 2 or idx == 3:
             assert day[1].number_of_events() == 13
             assert day[1].number_of_matches() == 25
+        else:
+            assert day[1].number_of_events() == 14
+            assert day[1].number_of_matches() == 28
+
+# Combine scheduling of OtherEvents and MatchEvents.
+# Check if appending of MatchEvents starts at shortest day.
+def test_create_schedule():
+    test_model = Model()
+
+    # Set days in model
+    days = [i for i in range(5)]
+    test_model.set_days(days)
+
+    # Set events in model
+    test_events = {}
+    test_events["0"] = [
+        OtherEvent(15, "Rangverkündigung", False, "", 5, "after", None)
+        ]
+    test_events["1"] = [
+        OtherEvent(15, "Rangverkündigung", False, "", 5, "after", None)
+        ]
+    test_model.set_other_events(test_events)
+
+    # Set categories in model
+    cats = []
+    cats.append(Category("U9", "1", 8, _create_n_teams(3)))
+    cats.append(Category("U11", "2", 5, _create_n_teams(5)))
+    cats.append(Category("U13", "1", 3, _create_n_teams(8)))
+    cats.append(Category("U16", "2", 4, _create_n_teams(7)))
+    cats.append(Category("Open", "3", 2, _create_n_teams(11)))
+    test_model.set_categories(cats)
+
+    # Set grouping infos in model
+    group_info = {}
+    for i in range (1, 4):
+        group_info[f"{i}"] = {
+            "match_dur": 15,
+            "num_fields": 2
+        }
+    test_model.set_group_info(group_info)
+    
+    tournament = create_schedule(test_model)
+
+    match_counter_0 = match_counter_1 = match_counter_2 = 0
+
+    for idx, day in enumerate(tournament):
+        match_counter_0 += day[0].number_of_matches()
+        match_counter_1 += day[1].number_of_matches()
+        match_counter_2 += day[2].number_of_matches()
+    assert match_counter_0 == 108
+    assert match_counter_1 == 134
+    assert match_counter_2 == 110
+
+    for idx, day in enumerate(tournament):
+        if idx == 0:
+            assert get_day_duration(day) == 555
+        elif idx == 1:
+            assert get_day_duration(day) == 540
+        else:
+            assert get_day_duration(day) == 540
 
 def _create_n_teams(num_teams: int) -> list:
     teams = []
     for i in range(num_teams):
         teams.append(Team(f"team{i}", "", None))
     return teams
+
+def get_day_duration(day: List[EventBlock]) -> int:
+    duration = 0
+    for block in day:
+        duration += block.total_duration()
+    return duration

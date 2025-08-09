@@ -1,4 +1,5 @@
 import math
+from typing import List
 
 from model.model import Model
 from .rr_run import create_n_rr_runs
@@ -67,7 +68,7 @@ def create_schedule(model: Model):
         cat.num_rr_per_day_floored = math.floor(cat.num_rr_per_day)
         cat.num_rr_remaining = len(cat.rr_runs) - (num_days * cat.num_rr_per_day_floored)
 
-    # TODO 5. Merge and distribute runs / matches of categories in same group on EventBlocks (starting at the shortest day)
+    # 5. Merge and distribute runs / matches of categories in same group on EventBlocks (starting at the shortest day)
     group_info = model.get_group_info()
     for group_idx, group in enumerate(group_info):
         # collect category indices in the current group
@@ -79,6 +80,8 @@ def create_schedule(model: Model):
         curr_group_info = group_info[group]
         match_dur = curr_group_info["match_dur"]
         num_fields = curr_group_info["num_fields"]
+
+        shortest_day_idx = get_shortest_day_idx(tournament)
 
         # Case 1: One single category in group
         # TODO: Check for double missions and apply wished strategy:
@@ -97,12 +100,13 @@ def create_schedule(model: Model):
             match_idx = 0
 
             for day_idx in range(num_days):
+                mod_day_idx = get_modified_day_idx(day_idx, shortest_day_idx, num_days)
                 for m_e in range(match_events_per_day):
                     curr_event = MatchEvent(match_dur, [])
                     for m in range(num_fields):
                         curr_event.matches.append(flattened_matches[match_idx])
                         match_idx += 1
-                    tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                    tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
                 # (i) EITHER append an entire additional match_event (if remaining)
                 if num_remain_match_events > 0:
                     curr_event = MatchEvent(match_dur, [])
@@ -110,14 +114,14 @@ def create_schedule(model: Model):
                         curr_event.matches.append(flattened_matches[match_idx])
                         match_idx += 1
                     num_remain_match_events -= 1
-                    tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                    tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
                 # (ii) OR append a partial match_event (if remaining)
                 elif num_remain_matches > 0:
                     curr_event = MatchEvent(match_dur, [])
                     for m in range(num_remain_matches):
                         curr_event.matches.append(flattened_matches[match_idx])
                         match_idx += 1
-                    tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                    tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
                     num_remain_matches = 0  # No remaining matches that do not fill an entire match event
 
 
@@ -135,6 +139,7 @@ def create_schedule(model: Model):
                 match_indices = [0 for _ in range(len(group_cats_sorted))]
 
                 for day_idx in range(num_days):
+                    mod_day_idx = get_modified_day_idx(day_idx, shortest_day_idx, num_days)
                     curr_event = MatchEvent(match_dur, [])
                     # Append regular rrs for each cat
                     for rr_idx in range(group_cats_sorted[-1].num_rr_per_day_floored):
@@ -144,7 +149,7 @@ def create_schedule(model: Model):
                                     curr_event.matches.append(cat.matches[match_indices[cat_idx]])
                                     match_indices[cat_idx] += 1
                                     if len(curr_event.matches) == num_fields:
-                                        tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                                        tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
                                         curr_event = MatchEvent(match_dur, [])
                     # Append another if cat has remaining rr
                     for cat_idx, cat in enumerate(group_cats_sorted):
@@ -153,12 +158,12 @@ def create_schedule(model: Model):
                                 curr_event.matches.append(cat.matches[match_indices[cat_idx]])
                                 match_indices[cat_idx] += 1
                                 if len(curr_event.matches) == num_fields:
-                                    tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                                    tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
                                     curr_event = MatchEvent(match_dur, [])
                             cat.num_rr_remaining -= 1
                     # If there remains a partial MatchEvent: Append it to the tournament too
                     if len(curr_event.matches) > 0:
-                        tournament[day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                        tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
 
             # TODO Case 2b: rr_per_day values are too different
 
@@ -174,3 +179,22 @@ def flatten_2d_list(rr_runs: list) -> list:
         for match in rr:
             matches.append(match)
     return matches
+
+def get_shortest_day_idx(tournament: List[List[EventBlock]]) -> int:
+    day_idx = 0
+    day_dur = get_day_duration(tournament[0])
+    for d_idx, d in enumerate(tournament):
+        curr_dur = get_day_duration(d)
+        if curr_dur < day_dur:
+            day_idx = d_idx
+            day_dur = curr_dur
+    return day_idx
+
+def get_day_duration(day: List[EventBlock]) -> int:
+    duration = 0
+    for block in day:
+        duration += block.total_duration()
+    return duration
+
+def get_modified_day_idx(day_idx: int, shortest_day_idx: int, num_days: int) -> int:
+    return (day_idx + shortest_day_idx) % num_days
