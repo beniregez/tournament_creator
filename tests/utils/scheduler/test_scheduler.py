@@ -39,16 +39,16 @@ def test_create_schedule_other_events():
     # Test number of days and blocks in tournament
     assert len(result) == 3
     for day in result:
-        assert len(day) == 4
-        for e in day:
-            assert isinstance(e, EventBlock)
+        assert len(day.blocks) == 4
+        for block in day.blocks:
+            assert isinstance(block, EventBlock)
             
     # Test number of after_events
     for idx, day in enumerate(result):
         if idx == 1:
-            assert day[1].number_of_events() == 2   # day 2 must have 2 events in 2nd block
+            assert day.blocks[1].number_of_events() == 2   # day 2 must have 2 events in 2nd block
         else:
-            assert day[1].number_of_events() == 1   # all other days must have 1 event in 2nd block
+            assert day.blocks[1].number_of_events() == 1   # all other days must have 1 event in 2nd block
 
     # Set before_events in model
     test_events = {}
@@ -61,9 +61,9 @@ def test_create_schedule_other_events():
     # Test number of before_events
     for idx, day in enumerate(result):
         if idx == 1:
-            assert day[0].number_of_events() == 2   # day 2 must have 2 events in 1st block
+            assert day.blocks[0].number_of_events() == 2   # day 2 must have 2 events in 1st block
         else:
-            assert day[0].number_of_events() == 1   # all other days must have 1 event in 1st block
+            assert day.blocks[0].number_of_events() == 1   # all other days must have 1 event in 1st block
 
     # Set during_events in model
     test_events = {}
@@ -76,9 +76,9 @@ def test_create_schedule_other_events():
     # Test number of during_events
     for idx, day in enumerate(result):
         if idx == 1:
-            assert day[2].number_of_events() == 2
+            assert day.blocks[2].number_of_events() == 2
         else:
-            assert day[2].number_of_events() == 1
+            assert day.blocks[2].number_of_events() == 1
 
 def test_create_schedule_one_category():
     test_model = Model()
@@ -105,15 +105,15 @@ def test_create_schedule_one_category():
     tournament = create_schedule(test_model)
 
     for day in tournament:
-        assert day[0].number_of_events() == 11
+        assert day.blocks[0].number_of_events() == 11
     
     event_counter = 0
     for idx, day in enumerate(tournament):
-        event_counter += day[1].number_of_events()
+        event_counter += day.blocks[1].number_of_events()
         if idx <= 2:
-            assert day[1].number_of_events() == 7
+            assert day.blocks[1].number_of_events() == 7
         else:
-            assert day[1].number_of_events() == 6
+            assert day.blocks[1].number_of_events() == 6
     assert event_counter == 33
 
 def test_create_schedule_two_categories():
@@ -144,22 +144,22 @@ def test_create_schedule_two_categories():
 
     for idx, day in enumerate(tournament):
         if idx == 0:
-            assert day[0].number_of_matches() == 25
-            assert day[0].number_of_events() == 13
+            assert day.blocks[0].number_of_matches() == 25
+            assert day.blocks[0].number_of_events() == 13
         elif idx < 4:
-            assert day[0].number_of_matches() == 21
-            assert day[0].number_of_events() == 11
+            assert day.blocks[0].number_of_matches() == 21
+            assert day.blocks[0].number_of_events() == 11
         elif idx == 4:
-            assert day[0].number_of_matches() == 20
-            assert day[0].number_of_events() == 10
+            assert day.blocks[0].number_of_matches() == 20
+            assert day.blocks[0].number_of_events() == 10
 
     for idx, day in enumerate(tournament):
         if idx == 2 or idx == 3:
-            assert day[1].number_of_events() == 13
-            assert day[1].number_of_matches() == 25
+            assert day.blocks[1].number_of_events() == 13
+            assert day.blocks[1].number_of_matches() == 25
         else:
-            assert day[1].number_of_events() == 14
-            assert day[1].number_of_matches() == 28
+            assert day.blocks[1].number_of_events() == 14
+            assert day.blocks[1].number_of_matches() == 28
 
 # Combine scheduling of OtherEvents and MatchEvents.
 # Check if appending of MatchEvents starts at shortest day.
@@ -203,29 +203,23 @@ def test_create_schedule():
     match_counter_0 = match_counter_1 = match_counter_2 = 0
 
     for idx, day in enumerate(tournament):
-        match_counter_0 += day[0].number_of_matches()
-        match_counter_1 += day[1].number_of_matches()
-        match_counter_2 += day[2].number_of_matches()
+        match_counter_0 += day.blocks[0].number_of_matches()
+        match_counter_1 += day.blocks[1].number_of_matches()
+        match_counter_2 += day.blocks[2].number_of_matches()
     assert match_counter_0 == 108
     assert match_counter_1 == 134
     assert match_counter_2 == 110
 
     for idx, day in enumerate(tournament):
         if idx == 0:
-            assert get_day_duration(day) == 555
+            assert day.total_duration() == 555
         elif idx == 1:
-            assert get_day_duration(day) == 540
+            assert day.total_duration() == 540
         else:
-            assert get_day_duration(day) == 540
+            assert day.total_duration() == 540
 
 def _create_n_teams(num_teams: int) -> list:
     teams = []
     for i in range(num_teams):
         teams.append(Team(f"team{i}", "", None))
     return teams
-
-def get_day_duration(day: List[EventBlock]) -> int:
-    duration = 0
-    for block in day:
-        duration += block.total_duration()
-    return duration

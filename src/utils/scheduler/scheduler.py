@@ -3,20 +3,21 @@ from typing import List
 
 from model.model import Model
 from .rr_run import create_n_rr_runs
-from core import EventBlock, Category, Team, Match, MatchEvent
+from core import EventDay, EventBlock, Category, Team, Match, MatchEvent
 
-def create_schedule(model: Model):
+def create_schedule(model: Model) -> List[EventDay]:
     num_days = len(model.get_days())
 
-    # 1. Create empty days
-    tournament = [[] for _ in range(num_days)]
+    # 1. Create empty EventDays
+    # tournament = [[] for _ in range(num_days)]
+    tournament = [EventDay() for _ in range(num_days)]
 
     # 2. Create empty EventBlocks. We need n + 1 because after last grouping block there might be after_events
     # which must be added to a dedicated EventBlock.
     num_blocks = len(model.get_unique_groups()) + 1
     for day in tournament:
         for _ in range(num_blocks):
-            day.append(EventBlock())
+            day.blocks.append(EventBlock())
 
     # 3. Fill in OtherEvents
     other_events = model.get_other_events()
@@ -28,9 +29,9 @@ def create_schedule(model: Model):
             if e.bef_dur_aft == "after":
                 if e.day_index == 0: # event takes place at all days
                     for day in tournament:
-                        day[group_idx].add_event(e)
+                        day.blocks[group_idx].add_event(e)
                 else:
-                    tournament[e.day_index - 1][group_idx].add_event(e)
+                    tournament[e.day_index - 1].blocks[group_idx].add_event(e)
             
     # 3.b Add before-events at begin of current group block
     for group, group_events in other_events.items():
@@ -39,9 +40,9 @@ def create_schedule(model: Model):
             if e.bef_dur_aft == "before":
                 if e.day_index == 0: # event takes place at all days
                     for day in tournament:
-                        day[group_idx].add_event(e)
+                        day.blocks[group_idx].add_event(e)
                 else:
-                    tournament[e.day_index - 1][group_idx].add_event(e)
+                    tournament[e.day_index - 1].blocks[group_idx].add_event(e)
     
     # 3.c Add during-events at correct index (with respect to before-events)
     for group, group_events in other_events.items():
@@ -50,9 +51,9 @@ def create_schedule(model: Model):
             if e.bef_dur_aft == "during":
                 if e.day_index == 0: # event takes place at all days
                     for day in tournament:
-                        day[group_idx].add_event_after_n_nones(e.dur_index, e)
+                        day.blocks[group_idx].add_event_after_n_nones(e.dur_index, e)
                 else:
-                    tournament[e.day_index - 1][group_idx].add_event_after_n_nones(e.dur_index, e)
+                    tournament[e.day_index - 1].blocks[group_idx].add_event_after_n_nones(e.dur_index, e)
     
     # 4. Create rr_runs for every category
     categories = model.get_categories().copy()
@@ -106,7 +107,7 @@ def create_schedule(model: Model):
                     for m in range(num_fields):
                         curr_event.matches.append(flattened_matches[match_idx])
                         match_idx += 1
-                    tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                    tournament[mod_day_idx].blocks[group_idx].add_event_to_next_available_slot(curr_event)
                 # (i) EITHER append an entire additional match_event (if remaining)
                 if num_remain_match_events > 0:
                     curr_event = MatchEvent(match_dur, [])
@@ -114,14 +115,14 @@ def create_schedule(model: Model):
                         curr_event.matches.append(flattened_matches[match_idx])
                         match_idx += 1
                     num_remain_match_events -= 1
-                    tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                    tournament[mod_day_idx].blocks[group_idx].add_event_to_next_available_slot(curr_event)
                 # (ii) OR append a partial match_event (if remaining)
                 elif num_remain_matches > 0:
                     curr_event = MatchEvent(match_dur, [])
                     for m in range(num_remain_matches):
                         curr_event.matches.append(flattened_matches[match_idx])
                         match_idx += 1
-                    tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                    tournament[mod_day_idx].blocks[group_idx].add_event_to_next_available_slot(curr_event)
                     num_remain_matches = 0  # No remaining matches that do not fill an entire match event
 
 
@@ -149,7 +150,7 @@ def create_schedule(model: Model):
                                     curr_event.matches.append(cat.matches[match_indices[cat_idx]])
                                     match_indices[cat_idx] += 1
                                     if len(curr_event.matches) == num_fields:
-                                        tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                                        tournament[mod_day_idx].blocks[group_idx].add_event_to_next_available_slot(curr_event)
                                         curr_event = MatchEvent(match_dur, [])
                     # Append another if cat has remaining rr
                     for cat_idx, cat in enumerate(group_cats_sorted):
@@ -158,18 +159,18 @@ def create_schedule(model: Model):
                                 curr_event.matches.append(cat.matches[match_indices[cat_idx]])
                                 match_indices[cat_idx] += 1
                                 if len(curr_event.matches) == num_fields:
-                                    tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                                    tournament[mod_day_idx].blocks[group_idx].add_event_to_next_available_slot(curr_event)
                                     curr_event = MatchEvent(match_dur, [])
                             cat.num_rr_remaining -= 1
                     # If there remains a partial MatchEvent: Append it to the tournament too
                     if len(curr_event.matches) > 0:
-                        tournament[mod_day_idx][group_idx].add_event_to_next_available_slot(curr_event)
+                        tournament[mod_day_idx].blocks[group_idx].add_event_to_next_available_slot(curr_event)
 
             # TODO Case 2b: rr_per_day values are too different
 
     # 6. Compact all blocks (remove nones).
     for day in tournament:
-        for block in day:
+        for block in day.blocks:
             block.events = block.get_valid_events()
     return tournament
 
@@ -180,21 +181,15 @@ def flatten_2d_list(rr_runs: list) -> list:
             matches.append(match)
     return matches
 
-def get_shortest_day_idx(tournament: List[List[EventBlock]]) -> int:
+def get_shortest_day_idx(tournament: List[EventDay]) -> int:
     day_idx = 0
-    day_dur = get_day_duration(tournament[0])
+    day_dur = tournament[0].total_duration()
     for d_idx, d in enumerate(tournament):
-        curr_dur = get_day_duration(d)
+        curr_dur = d.total_duration()
         if curr_dur < day_dur:
             day_idx = d_idx
             day_dur = curr_dur
     return day_idx
-
-def get_day_duration(day: List[EventBlock]) -> int:
-    duration = 0
-    for block in day:
-        duration += block.total_duration()
-    return duration
 
 def get_modified_day_idx(day_idx: int, shortest_day_idx: int, num_days: int) -> int:
     return (day_idx + shortest_day_idx) % num_days

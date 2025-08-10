@@ -30,7 +30,7 @@ def create_n_rr_runs(cat: Category, alter_home_away: bool = True):
     rr_runs = []
     
     if alter_home_away:
-        for run_idx in range(cat.runs):
+        for run_idx in range(int(cat.runs)):
             if run_idx % 2 == 0:
                 rr_run = create_rr_run(cat, False)
             else:

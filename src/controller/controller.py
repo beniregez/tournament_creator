@@ -1,6 +1,7 @@
 import json
 from view.main_view import MainView
 from model.model import Model
+from utils.scheduler.scheduler import create_schedule
 
 class Controller:
     def __init__(self):
@@ -39,6 +40,9 @@ class Controller:
     def update_group_info_from_view(self):
         group_info = self.view.group_info_tab.collect_input_fields()
         self.model.set_group_info(group_info)
+    
+    def generate_tournament_from_model(self):
+        self.model.set_tournament_generated(create_schedule(self.model))
     
     # def validate_grouping_durs_against_categories(self):
     #     curr_match_durs = self.model.get_match_durs()

@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
-from typing import List, Union
+from typing import Any, Dict, List, Optional, Union
 from core.event import MatchEvent, OtherEvent
 
 EventType = Union[MatchEvent, OtherEvent]
 
 @dataclass
 class EventBlock:
-    events: List[EventType] = field(default_factory=list)
+    events: List[Optional[EventType]] = field(default_factory=list)
 
     def add_event(self, event: EventType) -> None:
         if not isinstance(event, (MatchEvent, OtherEvent)):
@@ -99,3 +99,41 @@ class EventBlock:
     
     def number_of_matches(self) -> int:
         return sum(len(event.matches) for event in self.events if isinstance(event, MatchEvent))
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serializes EventBlock into a dict."""
+        serialized_events = []
+        for e in self.events:
+            if e is None:
+                serialized_events.append(None)
+            elif isinstance(e, MatchEvent):
+                serialized_events.append({
+                    "type": "match",
+                    "data": e.to_dict()
+                })
+            elif isinstance(e, OtherEvent):
+                serialized_events.append({
+                    "type": "other",
+                    "data": e.to_dict()
+                })
+            else:
+                raise TypeError(f"Unsupported event type: {type(e).__name__}")
+        return {"events": serialized_events}
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "EventBlock":
+        """Creates an EventBlock from a dict."""
+        events: List[Optional[EventType]] = []
+        for e in data.get("events", []):
+            if e is None:
+                events.append(None)
+            else:
+                etype = e.get("type")
+                edata = e.get("data", {})
+                if etype == "match":
+                    events.append(MatchEvent.from_dict(edata))
+                elif etype == "other":
+                    events.append(OtherEvent.from_dict(edata))
+                else:
+                    raise ValueError(f"Unknown event type: {etype}")
+        return cls(events=events)

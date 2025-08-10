@@ -1,5 +1,5 @@
 from typing import List
-from core import OtherEvent, Team, Category
+from core import OtherEvent, Team, Category, EventDay
 
 class Model:
     def __init__(self):
@@ -9,6 +9,7 @@ class Model:
         self.match_durs = {}
         self.group_info = {}
         self.other_events = {}
+        self.tournament_generated = []
     
     def set_data(self, data: dict):
         self.tournament_info = data.get("tournament_info", {})
@@ -20,6 +21,10 @@ class Model:
             group_id: [OtherEvent.from_dict(e) for e in group_events]
             for group_id, group_events in data.get("events", {}).items()
         }
+        if "tournament_generated" in data:
+            self.tournament_generated = [EventDay.from_dict(event_day) for event_day in data["tournament_generated"]]
+        else:
+            self.tournament_generated = []
 
     def get_data(self) -> dict:
         return {
@@ -31,7 +36,8 @@ class Model:
             "events": {
                 group_id: [e.to_dict() for e in group_events]
                 for group_id, group_events in self.other_events.items()
-            }
+            },
+            "tournament_generated": self.tournament_generated
         }
 
     def to_serializable_dict(self) -> dict:
@@ -44,7 +50,8 @@ class Model:
             "events": {
                 group_id: [event.to_dict() for event in group_events]
                 for group_id, group_events in self.other_events.items()
-            }
+            },
+            "tournament_generated": [event_day.to_dict() for event_day in self.tournament_generated]
         }
     
     def set_tournament_info(self, tournament_info):
@@ -85,3 +92,9 @@ class Model:
         
     def get_other_events(self) -> dict:
         return self.other_events
+    
+    def set_tournament_generated(self, tournament_generated):
+        self.tournament_generated = tournament_generated
+    
+    def get_tournament_generated(self) -> List[EventDay]:
+        return self.tournament_generated

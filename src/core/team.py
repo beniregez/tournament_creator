@@ -5,7 +5,7 @@ from typing import Optional
 @dataclass(frozen=True)
 class Team:
     name: str
-    color: str
+    color: str = "#FFFFFF"
     font_color: Optional[str] = None
 
     def __str__(self):
