@@ -24,6 +24,16 @@ class EventDay:
     def total_matches(self) -> int:
         return sum(block.number_of_matches() for block in self.blocks)
 
+    def max_fields(self) -> int:
+        """Returns the maximum of fields across all blocks"""
+        max_fields = 0
+        for block in self.blocks:
+            for ev in block.events:
+                if isinstance(ev, MatchEvent):
+                    if len(ev.matches) > max_fields:
+                        max_fields = len(ev.matches)
+        return max_fields
+
     def get_event(self, index: int) -> Optional[EventType]:
         """Returns the event at index across all blocks."""
         count = 0
