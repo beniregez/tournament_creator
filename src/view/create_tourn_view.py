@@ -53,9 +53,9 @@ class CreateTourn(QWidget):
         self.controller.generate_tournament_from_model()    # Generate tournament from Model
         self.build_schedule_tables()                        # Generate table with tournament
 
-    # TODO Use export module
+    # Use export module
     def export_excel(self):
-        print("export_excel() not implemented yet")
+        self.controller.export_to_excel()
 
     def build_schedule_tables(self):
         # 1. Prepare days (as flattened list).

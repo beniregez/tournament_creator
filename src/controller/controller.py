@@ -2,6 +2,7 @@ import json
 from view.main_view import MainView
 from model.model import Model
 from utils.scheduler.scheduler import create_schedule
+from utils.tourn_to_excel.excel_tournament_writer import ExcelTournamentWriter
 
 class Controller:
     def __init__(self):
@@ -57,10 +58,9 @@ class Controller:
 
     #     self.model.set_match_durs(cleaned_match_durs)
     
-    # TODO: implement
-    def export_to_excel(self, filepath):
-        pass
-        # ExcelWriter.export(self.model, filepath)
+    def export_to_excel(self):
+        tourn_writer = ExcelTournamentWriter(self.model)
+        tourn_writer.write_to_excel()
 
     def save_model_to_json(self, filename):
         self.update_model_from_views() # Before saving: Update model
