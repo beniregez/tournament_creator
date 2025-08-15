@@ -27,7 +27,6 @@ class DaySheetsWriter():
         for day in self.model.get_days():
             sheet = self.wb.add_worksheet(day["Title"])
             print("Sheet:", sheet.get_name(), "created.")
-            # self.worksheets.append(day["Title"])
             self.worksheets.append(sheet)
             sheet.hide_gridlines(2)
 
@@ -113,7 +112,7 @@ class DaySheetsWriter():
         for day_idx, day in enumerate(self.tourn_generated):
             ws = self.worksheets[day_idx]
             for field_idx in range(day.max_fields()):
-                center_col_idx = self._get_field_center_col_idx(field_idx)
+                center_col_idx = self.get_field_center_col_idx(field_idx)
                 ws.set_column(center_col_idx, center_col_idx, 1)    # Field center col
                 for col_idx in [center_col_idx - 1, center_col_idx + 1]:
                     ws.set_column(col_idx, col_idx, 2)   # Result cols
@@ -123,7 +122,7 @@ class DaySheetsWriter():
                     ws.set_column(col_idx, col_idx, None, None, {'hidden': True})   # Hide point cols
                 for col_idx in [center_col_idx - 4, center_col_idx + 4]:
                     ws.set_column(col_idx, col_idx, 5)   # Time cols
-                ref_col_idx = self._get_ref_col_idx(day.max_fields(), field_idx)
+                ref_col_idx = self.get_ref_col_idx(day.max_fields(), field_idx)
                 ws.set_column(ref_col_idx, ref_col_idx, 10)
 
     # Write first row with title, date and location
@@ -133,12 +132,12 @@ class DaySheetsWriter():
             ws = self.worksheets[day_idx]
             num_fields = self.tourn_generated[day_idx].max_fields()
             # Top and bottom border for all rows without first and last
-            for col_idx in range(1, self._get_time_col_idx(num_fields) - 1):
+            for col_idx in range(1, self.get_time_col_idx(num_fields) - 1):
                 ws.write(0, col_idx, "", self.title_format)
             ws.write(0, 0, "", self.title_left_format)  # Borders for first col
-            ws.write(0, self._get_time_col_idx(num_fields), "", self.title_right_format)  # Borders for last col
+            ws.write(0, self.get_time_col_idx(num_fields), "", self.title_right_format)  # Borders for last col
             # Header text
-            col_idx = self._get_center_col_idx(num_fields)
+            col_idx = self.get_center_col_idx(num_fields)
             header_text = f"{days[day_idx]["Date"]} ({days[day_idx]["Title"]}) in {days[day_idx]["Location"]}"
             ws.write(0, col_idx, header_text, self.title_format)
 
@@ -150,12 +149,12 @@ class DaySheetsWriter():
             ws = self.worksheets[day_idx]
 
             # Top and bottom border for all rows without first and last
-            for col_idx in range(1, self._get_time_col_idx(num_fields) - 1):
+            for col_idx in range(1, self.get_time_col_idx(num_fields) - 1):
                 ws.write(1, col_idx, "", self.header_format)
 
             # Time for every field + in last row
             for n in range(num_fields + 1):
-                col_idx = self._get_time_col_idx(n)
+                col_idx = self.get_time_col_idx(n)
                 if n == 0:
                     ws.write(1, col_idx, "Zeit", self.header_left_fat_format)
                 elif n == (num_fields):
@@ -165,12 +164,12 @@ class DaySheetsWriter():
 
             # Field + number for every field
             for n in range(num_fields):
-                col_idx = self._get_field_center_col_idx(n)
+                col_idx = self.get_field_center_col_idx(n)
                 ws.write(1, col_idx, f"Feld {n + 1}", self.header_format)
 
             # Referee + number for every field
             for n in range(num_fields):
-                col_idx = self._get_ref_col_idx(num_fields, n)
+                col_idx = self.get_ref_col_idx(num_fields, n)
                 if n == 0:
                     ws.write(1, col_idx, f"Schiri Feld {n + 1}", self.header_left_format)
                 elif n == num_fields - 1:
@@ -188,7 +187,7 @@ class DaySheetsWriter():
             # Time for every field + in last row
             for ev_idx, event in enumerate(day.get_all_valid_events()):
                 for n in range(num_fields + 1):
-                    col_idx = self._get_time_col_idx(n)
+                    col_idx = self.get_time_col_idx(n)
                     if n == 0:
                         ws.write(start_row_idx + ev_idx, col_idx, f"{curr_time.strftime("%H:%M")}", self.standard_format_all_borders_left_fat)
                     elif n == num_fields:
@@ -198,7 +197,7 @@ class DaySheetsWriter():
                 curr_time += timedelta(minutes=event.duration)
             # Add ending time
             for n in range(num_fields + 1):
-                col_idx = self._get_time_col_idx(n)
+                col_idx = self.get_time_col_idx(n)
                 if n == 0:
                     ws.write(start_row_idx + ev_idx + 1, col_idx, f"{curr_time.strftime("%H:%M")}", self.standard_format_all_borders_left_fat)
                 elif n == num_fields:
@@ -221,15 +220,15 @@ class DaySheetsWriter():
             self._draw_right_col_border(ws, ev_idx + start_row_idx + 1, num_fields)
 
     def _write_other_event(self, worksheet, event: OtherEvent, row_idx, num_fields):
-        for col_idx in range(1, self._get_time_col_idx(num_fields)):
+        for col_idx in range(1, self.get_time_col_idx(num_fields)):
             worksheet.write(row_idx, col_idx, "", self.standard_border_format)
-        col_idx = self._get_center_col_idx(num_fields)
+        col_idx = self.get_center_col_idx(num_fields)
         worksheet.write(row_idx, col_idx, event.label, self.standard_border_format)
 
     # Write match_event including ref cells
     def _write_match_event(self, worksheet, event: MatchEvent, row_idx, num_fields):
         for m_idx, match in enumerate(event.matches):
-            center_col_idx = self._get_field_center_col_idx(m_idx)
+            center_col_idx = self.get_field_center_col_idx(m_idx)
             home_format = self._add_and_get_color_format(match.team1.color)
             worksheet.write(row_idx, center_col_idx - 2, match.team1.name, home_format)   # Home team
             away_format = self._add_and_get_color_format(match.team2.color)
@@ -255,18 +254,18 @@ class DaySheetsWriter():
 
     def _write_ref_cells(self, worksheet, row_idx, num_fields, field_idx):
         # for field_idx in range(0, num_fields):
-        col_idx = self._get_ref_col_idx(num_fields, field_idx)
+        col_idx = self.get_ref_col_idx(num_fields, field_idx)
         worksheet.write(row_idx, col_idx, "", self.ref_cell_format)
 
     def _draw_bottom_row_borders(self, worksheet, row_idx, num_fields):
-        for col_idx in range(0, self._get_time_col_idx(num_fields) + 1):
+        for col_idx in range(0, self.get_time_col_idx(num_fields) + 1):
             worksheet.write(row_idx, col_idx, "", self.bottom_row_fat_border_format)
         for field_idx in range(num_fields):
-            col_idx = self._get_ref_col_idx(num_fields, field_idx)
+            col_idx = self.get_ref_col_idx(num_fields, field_idx)
             worksheet.write(row_idx, col_idx, "", self.bottom_row_border_format)
 
     def _draw_right_col_border(self, worksheet, row_idx, num_fields):
-        col_idx = self._get_ref_col_idx(num_fields, num_fields)
+        col_idx = self.get_ref_col_idx(num_fields, num_fields)
         worksheet.write(row_idx, col_idx, "", self.lef_col_border_format)
 
     # Add format with background color to dict (including borders). Return format with background color.
@@ -285,18 +284,45 @@ class DaySheetsWriter():
     ###############   Helper methods for column indexing   ###############
 
     # Get center column index: graphical, not arithmetical
-    def _get_center_col_idx(self, max_fields: int):
+    @staticmethod
+    def get_center_col_idx(max_fields: int):
         return 4 + 4 * (max_fields - 1)
 
     # Get time col index for the n-th field
-    def _get_time_col_idx(self, field_idx):
+    @staticmethod
+    def get_time_col_idx(field_idx):
         return 0 + (field_idx * 8)
 
     # Get center col index for the n-th field
-    def _get_field_center_col_idx(self, field_idx):
+    @staticmethod
+    def get_field_center_col_idx(field_idx):
         return 4 + (field_idx * 8)
 
     # Get index for n-th referee column 
-    def _get_ref_col_idx(self, num_fields, field_idx):
+    @staticmethod
+    def get_ref_col_idx(num_fields, field_idx):
         return (num_fields * 8) + 1 + field_idx
 
+    # Get index for n-th point column
+    @staticmethod
+    def get_point_col_idx(n_th_point_col):
+        if n_th_point_col % 2 == 0:
+            return DaySheetsWriter.get_field_center_col_idx(n_th_point_col // 2) - 3
+        else:
+            return DaySheetsWriter.get_field_center_col_idx(n_th_point_col // 2) + 3
+
+    # Get index for n-th team  column
+    @staticmethod
+    def get_team_col_idx(n_th_team_col):
+        if n_th_team_col % 2 == 0:
+            return DaySheetsWriter.get_field_center_col_idx(n_th_team_col // 2) - 2
+        else:
+            return DaySheetsWriter.get_field_center_col_idx(n_th_team_col // 2) + 2
+
+    # Get index for n-th result column
+    @staticmethod
+    def get_result_col_idx(n_th_result_col):
+        if n_th_result_col % 2 == 0:
+            return DaySheetsWriter.get_field_center_col_idx(n_th_result_col // 2) - 1
+        else:
+            return DaySheetsWriter.get_field_center_col_idx(n_th_result_col // 2) + 1
