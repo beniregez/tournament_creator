@@ -127,9 +127,11 @@ class CategoriesView(QWidget):
                 if r == self.GROUP_ROW_INDEX:
                     spin = self.table.cellWidget(r, c)
                     row_data.append(str(spin.value()) if spin else "")
+                    row_colors.append("")  # no colors
                 elif r == self.RUNS_ROW_INDEX:
                     spin = self.table.cellWidget(r, c)
                     row_data.append(str(spin.value()) if spin else "")
+                    row_colors.append("")
                 else:
                     item = self.table.item(r, c)
                     row_data.append(item.text() if item else "")
@@ -166,6 +168,12 @@ class CategoriesView(QWidget):
                         item = QTableWidgetItem()
                         self.table.setItem(r, c, item)
                     item.setText(text)
+                    color_hex = colors[r_offset][c_offset]
+                    if color_hex:
+                        color = QColor(color_hex)
+                        item.setBackground(QBrush(color))
+                        self.column_colors[(r, c)] = color
+
                 elif r == self.GROUP_ROW_INDEX or r == self.RUNS_ROW_INDEX:
                     spin = self.table.cellWidget(r, c)
                     if spin:
@@ -173,6 +181,7 @@ class CategoriesView(QWidget):
                             spin.setValue(int(text))
                         except ValueError:
                             pass
+
                 else:
                     item = self.table.item(r, c)
                     if not item:
@@ -198,8 +207,6 @@ class CategoriesView(QWidget):
         if not color.isValid():
             return
         for item in self.table.selectedItems():
-            if item.row() == self.TITLE_ROW_INDEX:
-                continue
             item.setBackground(QBrush(color))
             self.column_colors[(item.row(), item.column())] = color
 
@@ -217,6 +224,10 @@ class CategoriesView(QWidget):
             runs_widget = self.table.cellWidget(self.RUNS_ROW_INDEX, col)
             runs = str(runs_widget.value()) if runs_widget else ""
 
+            # Background color from category cell
+            cat_color = self.column_colors.get((self.TITLE_ROW_INDEX, col))
+            bg_color = cat_color.name() if cat_color else "#FFFFFF"
+
             teams = []
             for row in range(self.TEAM_ROW_OFFSET, self.table.rowCount()):
                 item = self.table.item(row, col)
@@ -227,7 +238,7 @@ class CategoriesView(QWidget):
                     teams.append(Team(name=text, color=color_hex))
 
             if name or teams:
-                cat = Category(name=name, group=group, runs=runs, teams=teams)
+                cat = Category(name=name, group=group, runs=runs, teams=teams, bg_color=bg_color)
                 categories.append(cat)
 
         return categories
@@ -241,7 +252,12 @@ class CategoriesView(QWidget):
                 break
 
             # Category name
-            self.table.setItem(self.TITLE_ROW_INDEX, col, QTableWidgetItem(category.name))
+            item = QTableWidgetItem(category.name)
+            if category.bg_color:
+                color = QColor(category.bg_color)
+                item.setBackground(QBrush(color))
+                self.column_colors[(self.TITLE_ROW_INDEX, col)] = color
+            self.table.setItem(self.TITLE_ROW_INDEX, col, item)
 
             # Group
             group_spin = self.table.cellWidget(self.GROUP_ROW_INDEX, col)

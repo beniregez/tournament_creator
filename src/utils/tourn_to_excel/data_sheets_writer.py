@@ -16,7 +16,8 @@ class DataSheetsWriter():
         self.password = password
         self.day_sheet_names = [day["Title"] for day in self.model.get_days()]
 
-        self.team_color_formats = {}
+        self.team_color_formats = {}    # TODO: remove and use color_formats instead
+        self.color_formats = {}
 
     def write_sheets_to_excel(self):
         self.write_data_sheet_to_excel()
@@ -34,6 +35,8 @@ class DataSheetsWriter():
 
     def write_scoreboard_sheet_to_excel(self):
         self.init_scoreboard_sheet()
+        self.write_scoreboards(row_offset=1)
+        self.set_scoreboard_sheet_col_widths()
 
 
     ##### Data sheet functions #####
@@ -146,8 +149,8 @@ class DataSheetsWriter():
                 for i in range(0, 6):
                     self.data_sheet.write_formula(row_idx, 4 + i, self._get_sum_cells_formula(row_idx, [(x + 1 + i) for x in day_col_offsets]), self.color_font_formats[1 + i])
                 self.data_sheet.write_formula(row_idx, 10, f"{self._get_sum_cells_formula(row_idx, [6, 7, 8])}", self.standard_format)
-                # Compute rank. Exact same metrics still result in different ranking because of added {team_idx} such that
-                # two teams always will have a different ranking.
+                # Compute rank. Exact same metrics still result in different ranking because of added {team_idx}
+                # such that two teams always will have a different ranking.
                 comp_rank_formula = f"{xl_rowcol_to_cell(row_idx, 2)} * 10^16" \
                                     f" + {xl_rowcol_to_cell(row_idx, 3)} * 10^12" \
                                     f" + {xl_rowcol_to_cell(row_idx, 4)} * 10^8" \
@@ -190,6 +193,35 @@ class DataSheetsWriter():
                 })
         return self.team_color_formats[color_hex]
 
+    def get_custom_format(self, bg_color_hex:str, bold=False, left=0, right=0, top=0, bottom=0, align_center=True):
+        key = (bg_color_hex, bold, left, right, top, bottom, align_center)
+        
+        if key not in self.color_formats:
+            fmt = {
+                'bg_color': bg_color_hex,
+                'font_size': 11,
+                'valign': 'vcenter',
+                'align': 'center' if align_center else 'left'
+            }
+            
+            if bold:
+                fmt['bold'] = True
+            
+            # Set border thickness
+            if left:
+                fmt['left'] = left
+            if right:
+                fmt['right'] = right
+            if top:
+                fmt['top'] = top
+            if bottom:
+                fmt['bottom'] = bottom
+            
+            self.color_formats[key] = self.wb.add_format(fmt)
+        
+        return self.color_formats[key]
+
+
     def _get_formula_col_range(self, row_idx, col_idx, col_delta, absolute=False):
         """
         Returns a string with a cell range in one row for excel formula.
@@ -221,3 +253,68 @@ class DataSheetsWriter():
     def init_scoreboard_sheet(self, name: str = "Scoreboard"):
         self.scoreboard_sheet = self.wb.add_worksheet(name)
         print("Sheet:", self.scoreboard_sheet.get_name(), "created.")
+
+    def write_scoreboards(self, row_offset: int):
+        cats = self.model.get_categories()
+        data_sh_name = self.data_sheet.get_name()
+        col_headers = ["", "Rang", "gesp.", "TD", "T", "GT", "S", "U", "N", "Punkte"]
+
+        row_idx = 1 + row_offset
+        for cat in cats:
+            cat_start_row = row_idx
+            cat_length = len(cat.teams)
+            bg_color = cat.bg_color
+            bg_color_light = self.lighten_color(bg_color, 0.4)
+            cat_header_fmt_all = self.get_custom_format(bg_color, True, 2, 2, 2, 2)
+            cat_header_fmt_t_b = self.get_custom_format(bg_color, True, 0, 0, 2, 2)
+            cat_teams_fmt = self.get_custom_format(bg_color_light, False, 2, 2, 1, 1, False)
+            cat_rank_fmt = self.get_custom_format(bg_color_light, True, 2, 2, 1, 1)
+            cat_metr_fmt = self.get_custom_format(bg_color_light, False, 0, 0, 1, 1)
+
+            # Cat headers
+            for h_idx, h in enumerate(col_headers):
+                self.scoreboard_sheet.write(row_idx - 1, h_idx, h, cat_header_fmt_t_b)
+            self.scoreboard_sheet.write(row_idx - 1, 0, cat.name, cat_header_fmt_all)
+            self.scoreboard_sheet.write(row_idx - 1, 1, col_headers[1], cat_header_fmt_all)
+            self.scoreboard_sheet.write(row_idx - 1, 9, col_headers[9], cat_header_fmt_all)
+
+            # Cat metric values
+            for t_idx, team in enumerate(cat.teams):
+                self.scoreboard_sheet.write_formula(row_idx, 0, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 0)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 0)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_teams_fmt)
+                self.scoreboard_sheet.write_formula(row_idx, 1, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 1)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 1)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_rank_fmt)
+                self.scoreboard_sheet.write_formula(row_idx, 2, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 10)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 10)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_metr_fmt)
+                for col_idx in [3, 4, 5, 6, 7, 8]:
+                    self.scoreboard_sheet.write_formula(row_idx, col_idx, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, col_idx)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, col_idx)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_metr_fmt)
+                self.scoreboard_sheet.write_formula(row_idx, 9, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 2)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 10)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_rank_fmt)
+
+                row_idx += 1
+
+            for col_idx in range(10):
+                self.scoreboard_sheet.write(row_idx, col_idx, "", self.get_custom_format('#FFFFFF', False, 0, 0, 2, 0))
+            row_idx += 2
+
+
+    def set_scoreboard_sheet_col_widths(self):
+        self.scoreboard_sheet.set_column(0, 0, 22)
+        self.scoreboard_sheet.set_column(2, 8, 6)
+
+
+    @staticmethod
+    def lighten_color(hex_color: str, factor: float = 0.2):
+        """
+        Generates a lighter version of a given color.
+        :param hex_color: Hex code, e.g., '#336699'
+        :param factor: Brightening factor, (0.0 - 1.0), e.g. 0.2 for 20% lighter color
+        :return: Lighter hex code
+        """
+        hex_color = hex_color.lstrip('#')
+        factor = factor % 1
+        # int(..., 16) converts the two-digit hex value to a decimal number
+        r, g, b = [int(hex_color[i:i+2], 16) for i in (0, 2, 4)]
+
+        # Interpolate towards white
+        r = int(r + (255 - r) * factor)
+        g = int(g + (255 - g) * factor)
+        b = int(b + (255 - b) * factor)
+
+        return f'#{r:02x}{g:02x}{b:02x}'
