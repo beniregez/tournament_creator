@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QFileDialog, QLineEdit, QLabel, QSpacerItem, QSpinBox,
-    QSizePolicy
+    QSizePolicy, QCheckBox
 )
 from PyQt5.QtCore import Qt
 
@@ -29,6 +29,13 @@ class HomeView(QWidget):
         main_layout.addLayout(title_row)
         main_layout.addSpacing(25)
 
+        # Checkbox: Decide whether referee cards shall be generated when exporting.
+        self.ref_checkbox = QCheckBox("Generate referee cards when exporting")
+        self.ref_checkbox.setChecked(True)  # Default: Generate referee cards.
+        self.ref_checkbox.stateChanged.connect(self.update_model)
+        main_layout.addWidget(self.ref_checkbox)
+        main_layout.addSpacing(25)
+
         # Save and Load Buttons
         button_layout = QHBoxLayout()
         self.save_btn = QPushButton("Save as JSON")
@@ -47,11 +54,13 @@ class HomeView(QWidget):
     def collect_input_fields(self):
         return {
             "title": self.title_input.text().strip(),
+            "gen_ref_cards": True if self.ref_checkbox.isChecked() else False
         }
 
     def populate_from_model(self, model):
         data = model.get_tournament_info()
         self.title_input.setText(data.get("title", ""))
+        self.ref_checkbox.setChecked(True) if data["gen_ref_cards"] == True else self.ref_checkbox.setChecked(False)
 
     def update_model(self):
         self.controller.model.set_tournament_info(self.collect_input_fields())
