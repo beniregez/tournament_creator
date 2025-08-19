@@ -1,4 +1,5 @@
 import json
+from utils.tourn_ref_card_creator.ref_card_creator import RefCardCreator
 from view.main_view import MainView
 from model.model import Model
 from utils.scheduler.scheduler import create_schedule
@@ -20,7 +21,9 @@ class Controller:
         self.update_other_events_from_view()
 
     def update_home_from_view(self):
-        self.title = self.view.home_tab.collect_input_fields()
+        info = self.view.home_tab.collect_input_fields()
+        self.model.set_tournament_info(info)
+
 
     def update_other_events_from_view(self):
         events = self.view.events_tab.collect_input_fields()
@@ -61,6 +64,9 @@ class Controller:
     def export_to_excel(self):
         tourn_writer = ExcelTournamentWriter(self.model)
         tourn_writer.write_to_excel()
+        if self.model.get_tournament_info().get("gen_ref_cards", False):
+            ref_card_creator = RefCardCreator(self.model)
+            ref_card_creator.create_cards()
 
     def save_model_to_json(self, filename):
         self.update_model_from_views() # Before saving: Update model

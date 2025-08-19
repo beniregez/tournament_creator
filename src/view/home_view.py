@@ -60,9 +60,11 @@ class HomeView(QWidget):
     def populate_from_model(self, model):
         data = model.get_tournament_info()
         self.title_input.setText(data.get("title", ""))
-        self.ref_checkbox.setChecked(True) if data["gen_ref_cards"] == True else self.ref_checkbox.setChecked(False)
+        self.ref_checkbox.setChecked(data.get("gen_ref_cards", True))
+        self.update_model()
 
     def update_model(self):
+        info = self.collect_input_fields()
         self.controller.model.set_tournament_info(self.collect_input_fields())
 
     def save_to_file(self):
