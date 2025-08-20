@@ -3,7 +3,7 @@ from typing import List
 
 from model.model import Model
 from .rr_run import create_n_rr_runs
-from core import EventDay, EventBlock, Category, Team, Match, MatchEvent
+from core import EventDay, EventBlock, Category, Team, Match, MatchEvent, OtherEvent
 
 def create_schedule(model: Model) -> List[EventDay]:
     num_days = len(model.get_days())
@@ -85,8 +85,6 @@ def create_schedule(model: Model) -> List[EventDay]:
         shortest_day_idx = get_shortest_day_idx(tournament)
 
         # Case 1: One single category in group
-        # TODO: Check for double missions and apply wished strategy:
-        # (a) empty fields, (b) break, (c) indifference
         if len(cat_indices) == 1:
             cat_idx = cat_indices[0]
 
@@ -204,10 +202,53 @@ def create_schedule(model: Model) -> List[EventDay]:
                 if len(curr_event.matches) > 0:
                     tournament[mod_day_idx].blocks[group_idx].add_event_to_next_available_slot(curr_event)
 
-    # 6. Compact all blocks (remove nones).
+        # TODO: 6. Check for double missions and apply wished strategy:
+        # (a) empty fields, (b) pause, (c) ignore
+        # if "double_missions" in curr_group_info and curr_group_info["double_missions"] == "empty_field":
+        #     for day in tournament:
+        #         events = day.blocks[group_idx].get_valid_events()
+        #         prev_teams = set()
+        #         curr_teams = set()
+        #         for event in events:
+        #             if isinstance(event, MatchEvent):
+        #                 curr_teams = event.get_unique_teams()
+        #                 if has_common_team(prev_teams, curr_teams):
+        #                     pass
+        #                 pass
+        #             else:
+        #                 pass
+                    # pass
+
+        if "double_missions" in curr_group_info and curr_group_info["double_missions"] == "pause":
+            pause_dur = curr_group_info["pause_dur"]
+            for day in tournament:
+                block = day.blocks[group_idx]
+                prev_teams = set()
+                curr_teams = set()
+                other_ev_buffer = 0
+                insertions = []
+
+                for ev_idx, event in enumerate(block.events):
+                    if isinstance(event, MatchEvent):
+                        curr_teams = event.get_unique_teams()
+                        if has_common_team(prev_teams, curr_teams):
+                            curr_pause = pause_dur - other_ev_buffer
+                            if curr_pause > 0:
+                                pause_event = OtherEvent(curr_pause, "", False, None, None, None, None)
+                                insertions.append((ev_idx, pause_event))
+                        other_ev_buffer = 0
+                        prev_teams = curr_teams
+                    elif isinstance(event, OtherEvent):
+                        other_ev_buffer += event.duration
+
+                for idx, event in reversed(insertions):
+                    block.insert_event_at_position(event, idx)
+
+    # 7. Compact all blocks (remove nones).
     for day_idx in tournament:
         for block in day_idx.blocks:
             block.events = block.get_valid_events()
+
     return tournament
 
 def flatten_2d_list(rr_runs: list) -> list:
@@ -229,3 +270,6 @@ def get_shortest_day_idx(tournament: List[EventDay]) -> int:
 
 def get_modified_day_idx(day_idx: int, shortest_day_idx: int, num_days: int) -> int:
     return (day_idx + shortest_day_idx) % num_days
+
+def has_common_team(prev_teams: set, curr_teams: set) -> bool:
+    return not prev_teams.isdisjoint(curr_teams)

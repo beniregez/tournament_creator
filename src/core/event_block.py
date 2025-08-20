@@ -34,6 +34,19 @@ class EventBlock:
             self.events.append(None)
         self.events[position] = event
 
+    def insert_event_at_position(self, event: EventType, position: int) -> None:
+        if not isinstance(event, (MatchEvent, OtherEvent)):
+            raise TypeError("Only MatchEvent or OtherEvent instances are allowed.")
+        if position < 0:
+            raise IndexError("Negative position is not allowed.")
+
+        # Make sure the list is long enough
+        while len(self.events) < position:
+            self.events.append(None)
+
+        # Insert event without overwriting
+        self.events.insert(position, event)
+
     def add_event_after_n_nones(self, n: int, event: EventType) -> None:
         """Inserts an event after a total of n None entries,
         but only after all subsequent real events have been processed.

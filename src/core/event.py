@@ -30,6 +30,12 @@ class MatchEvent(Event):
         if not all(isinstance(m, Match) for m in self.matches):
             raise TypeError("All matches must be instances of Match.")
 
+    def get_unique_teams(self) -> set:
+        """Returns all unique team instances from all matches."""
+        teams = {match.team1 for match in self.matches}
+        teams.update(match.team2 for match in self.matches)
+        return teams
+
     def to_dict(self):
         return {
             "duration": self.duration,

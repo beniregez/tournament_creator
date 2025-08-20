@@ -4,7 +4,7 @@ import os
 from typing import List
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../src/')))
 
-from core import OtherEvent, EventBlock, Category, Team
+from core import OtherEvent, EventBlock, Category, Team, MatchEvent
 from utils.scheduler.scheduler import create_schedule
 from model.model import Model
 
@@ -253,6 +253,47 @@ def test_create_schedule_different_rr_per_day():
     assert tournament[2].blocks[0].number_of_matches() == 26
     assert tournament[3].blocks[0].number_of_matches() == 23
     assert tournament[4].blocks[0].number_of_matches() == 23
+
+
+
+def test_double_mission_handling_pause():
+    test_model = Model()
+
+    # Set days in model
+    days = [i for i in range(5)]
+    test_model.set_days(days)
+
+    # Set events in model
+    test_events = {}
+    test_events["1"] = [
+        OtherEvent(15, "", False, "", 1, "during", 2)
+        ]
+    test_model.set_other_events(test_events)
+
+    # Set categories in model
+    cats = []
+    cats.append(Category("Cat1", "1", 4, _create_n_teams(5)))
+    test_model.set_categories(cats)
+
+    # Set grouping infos in model
+    group_info = {}
+    group_info[f"{1}"] = {
+        "match_dur": 15,
+        "num_fields": 2,
+        "double_missions": "pause",
+        "pause_dur": 5
+    }
+    test_model.set_group_info(group_info)
+    
+    tournament = create_schedule(test_model)
+
+    for day in tournament:
+        assert day.blocks[0].number_of_matches() == 8
+    
+    assert tournament[0].total_duration() == 85
+    assert tournament[1].total_duration() == 75
+    assert tournament[4].total_duration() == 75
+    assert tournament[0].blocks[0].number_of_events() == 7
 
 
 def _create_n_teams(num_teams: int) -> list:
