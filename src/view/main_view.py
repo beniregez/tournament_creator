@@ -57,8 +57,10 @@ class MainView(QMainWindow):
 
         # When entering the GrouInfo Tag
         if index == self.tabs.indexOf(self.group_info_tab):
-            self.group_info_tab.populate_from_model(self.controller.model)
-        
+            if self.controller.model.get_groupings_changed():
+                self.group_info_tab.populate_from_model(self.controller.model)
+                self.controller.model.set_groupings_changed(False)
+
         # When leaving the GroupInfo Tab
         if prev_index == self.tabs.indexOf(self.group_info_tab):
             self.controller.update_group_info_from_view()

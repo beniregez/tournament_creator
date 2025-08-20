@@ -241,6 +241,12 @@ class CategoriesView(QWidget):
                 cat = Category(name=name, group=group, runs=runs, teams=teams, bg_color=bg_color)
                 categories.append(cat)
 
+        # Compare with previous groupings.
+        old_groups = {cat.group for cat in self.controller.model.get_categories()}
+        new_groups = {cat.group for cat in categories}
+        if old_groups != new_groups:
+            self.controller.model.set_groupings_changed(True)
+
         return categories
     
     def populate_from_model(self, model):

@@ -5,7 +5,10 @@ class Model:
     def __init__(self):
         self.tournament_info = {}
         self.days = []
-        self.categories = []
+        self.categories: List[Category] = []
+        self.groupings_changed: bool = False
+        self._prev_group_ids: set[str] = set()
+
         self.match_durs = {}
         self.group_info = {}
         self.other_events = {}
@@ -25,6 +28,9 @@ class Model:
             self.tournament_generated = [EventDay.from_dict(event_day) for event_day in data["tournament_generated"]]
         else:
             self.tournament_generated = []
+
+        # After set_data: Check, if groupings have changed.
+        self._update_groupings_changed()
 
     def get_data(self) -> dict:
         return {
@@ -66,8 +72,10 @@ class Model:
     def get_days(self) -> list:
         return self.days
     
-    def set_categories(self, categories):
+    def set_categories(self, categories: List[Category]):
+        """Set categories and check if groupings have changed."""
         self.categories = categories
+        self._update_groupings_changed()
     
     def get_categories(self) -> list:
         return self.categories
@@ -98,3 +106,17 @@ class Model:
     
     def get_tournament_generated(self) -> List[EventDay]:
         return self.tournament_generated
+
+    # Groupings Changed Flag
+    def _update_groupings_changed(self):
+        """Internal method: Check, if number of groupings has changed."""
+        new_group_ids = {cat.group for cat in self.categories}
+        if new_group_ids != self._prev_group_ids:
+            self.groupings_changed = True
+        self._prev_group_ids = new_group_ids
+
+    def get_groupings_changed(self) -> bool:
+        return self.groupings_changed
+
+    def set_groupings_changed(self, value: bool):
+        self.groupings_changed = value
