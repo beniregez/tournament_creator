@@ -218,6 +218,43 @@ def test_create_schedule():
         else:
             assert day.total_duration() == 540
 
+def test_create_schedule_different_rr_per_day():
+    test_model = Model()
+
+    # Set days in model
+    days = [i for i in range(5)]
+    test_model.set_days(days)
+
+    # Set events in model
+    test_events = {}
+    test_events["0"] = [
+        OtherEvent(15, "Rangverkündigung", False, "", 5, "after", None)
+        ]
+    test_model.set_other_events(test_events)
+
+    # Set categories in model
+    cats = []
+    cats.append(Category("Cat1", "1", 4, _create_n_teams(5)))
+    cats.append(Category("Cat2", "1", 4, _create_n_teams(7)))
+    test_model.set_categories(cats)
+
+    # Set grouping infos in model
+    group_info = {}
+    group_info[f"{1}"] = {
+        "match_dur": 15,
+        "num_fields": 2
+    }
+    test_model.set_group_info(group_info)
+    
+    tournament = create_schedule(test_model)
+
+    assert tournament[0].blocks[0].number_of_matches() == 26
+    assert tournament[1].blocks[0].number_of_matches() == 26
+    assert tournament[2].blocks[0].number_of_matches() == 26
+    assert tournament[3].blocks[0].number_of_matches() == 23
+    assert tournament[4].blocks[0].number_of_matches() == 23
+
+
 def _create_n_teams(num_teams: int) -> list:
     teams = []
     for i in range(num_teams):
