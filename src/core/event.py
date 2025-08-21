@@ -8,8 +8,8 @@ class Event:
     duration: int
 
     def __post_init__(self):
-        if not isinstance(self.duration, int) or self.duration <= 0:
-            raise ValueError("Duration must be a positive integer.")
+        if not isinstance(self.duration, int) or self.duration < 0:
+            raise ValueError("Duration must be a non-negative integer.")
 
     def to_dict(self):
         return {
