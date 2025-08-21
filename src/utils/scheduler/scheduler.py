@@ -280,17 +280,18 @@ def remove_double_missions_with_empty_field(block: EventBlock, num_fields, match
         if isinstance(event, MatchEvent):
             matches = event.matches
             for match in matches:
-                # Case 1: team1 or team2 is in previous event -> Start new event
-                if (match.team1 in prev_teams or match.team2 in prev_teams):
+                # Case 1: team1 or team2 already in current event -> Add empty buffer MatchEvent and start new event
+                if (match.team1 in curr_event.get_unique_teams() or match.team2 in curr_event.get_unique_teams()):
+                    new_block.add_event_to_next_available_slot(curr_event)
+                    new_block.add_event_to_next_available_slot(MatchEvent(match_dur, []))
+                    prev_teams = set()
+                    curr_event = MatchEvent(match_dur, [match])
+                # Case 2: team1 or team2 in previous event -> Start new event
+                elif (match.team1 in prev_teams or match.team2 in prev_teams):
                     new_block.add_event_to_next_available_slot(curr_event)
                     prev_teams = curr_event.get_unique_teams()
                     curr_event = MatchEvent(match_dur, [match])
-                elif (match.team1 in curr_event.get_unique_teams() or match.team2 in curr_event.get_unique_teams()):
-                    # Team already in current event –> skip or start new event
-                    new_block.add_event_to_next_available_slot(curr_event)
-                    prev_teams = curr_event.get_unique_teams()
-                    curr_event = MatchEvent(match_dur, [match])
-                # Case 2: no double mission
+                # Case 3: no double mission -> Append match to current event
                 else:
                     curr_event.matches.append(match)
                     
