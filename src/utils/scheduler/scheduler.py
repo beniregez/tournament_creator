@@ -203,23 +203,13 @@ def create_schedule(model: Model) -> List[EventDay]:
                     tournament[mod_day_idx].blocks[group_idx].add_event_to_next_available_slot(curr_event)
 
         # TODO: 6. Check for double missions and apply wished strategy:
-        # (a) empty fields, (b) pause, (c) ignore
-        # if "double_missions" in curr_group_info and curr_group_info["double_missions"] == "empty_field":
-        #     for day in tournament:
-        #         events = day.blocks[group_idx].get_valid_events()
-        #         prev_teams = set()
-        #         curr_teams = set()
-        #         for event in events:
-        #             if isinstance(event, MatchEvent):
-        #                 curr_teams = event.get_unique_teams()
-        #                 if has_common_team(prev_teams, curr_teams):
-        #                     pass
-        #                 pass
-        #             else:
-        #                 pass
-                    # pass
+        # (a) empty fields, (b) pause, (c) ignore (default)
+        if "double_missions" in curr_group_info and curr_group_info["double_missions"] == "empty_field":
+            for day in tournament:
+                if has_double_missions(day.blocks[group_idx]):  # Check if block has double missions
+                    day.blocks[group_idx] = remove_double_missions_with_empty_field(day.blocks[group_idx], num_fields, match_dur)
 
-        if "double_missions" in curr_group_info and curr_group_info["double_missions"] == "pause":
+        elif "double_missions" in curr_group_info and curr_group_info["double_missions"] == "pause":
             pause_dur = curr_group_info["pause_dur"]
             for day in tournament:
                 block = day.blocks[group_idx]
@@ -273,3 +263,67 @@ def get_modified_day_idx(day_idx: int, shortest_day_idx: int, num_days: int) -> 
 
 def has_common_team(prev_teams: set, curr_teams: set) -> bool:
     return not prev_teams.isdisjoint(curr_teams)
+
+def remove_double_missions_with_empty_field(block: EventBlock, num_fields, match_dur):
+    new_block = EventBlock()
+    # Copy OtherEvents to new block
+    for ev_idx, ev in enumerate(block.events):
+        if isinstance(ev, OtherEvent):
+            new_block.insert_event_at_position(ev, ev_idx)
+
+    # Insert all Matches into new block. Prevent double missions.
+    events = block.get_valid_events()
+    curr_event = MatchEvent(match_dur, [])
+    prev_teams = set()
+    other_ev_buffer = 0
+    for event in events:
+        if isinstance(event, MatchEvent):
+            matches = event.matches
+            for match in matches:
+                # Case 1: team1 or team2 is in previous event -> Start new event
+                if (match.team1 in prev_teams or match.team2 in prev_teams):
+                    new_block.add_event_to_next_available_slot(curr_event)
+                    prev_teams = curr_event.get_unique_teams()
+                    curr_event = MatchEvent(match_dur, [match])
+                elif (match.team1 in curr_event.get_unique_teams() or match.team2 in curr_event.get_unique_teams()):
+                    # Team already in current event –> skip or start new event
+                    new_block.add_event_to_next_available_slot(curr_event)
+                    prev_teams = curr_event.get_unique_teams()
+                    curr_event = MatchEvent(match_dur, [match])
+                # Case 2: no double mission
+                else:
+                    curr_event.matches.append(match)
+                    
+                # If all fields are occupied: Add MatchEvent to block
+                if len(curr_event.matches) == num_fields:
+                    new_block.add_event_to_next_available_slot(curr_event)
+                    prev_teams = curr_event.get_unique_teams()
+                    curr_event = MatchEvent(match_dur, [])
+            
+            other_ev_buffer = 0 # Reset buffer time
+        
+        elif isinstance(event, OtherEvent):
+            other_ev_buffer += event.duration
+            # If buffer from OtherEvent(s) is long enough: no empty field needed.
+            if other_ev_buffer >= match_dur:
+                prev_teams = set()
+
+    # If there remains a partial MatchEvent: Append it to the block as well
+    if len(curr_event.matches) > 0:
+        new_block.add_event_to_next_available_slot(curr_event)
+
+    return new_block
+
+def has_double_missions(block: EventBlock):
+    prev_teams = set()
+    curr_teams = set()
+    for event in block.events:
+        if isinstance(event, MatchEvent):
+            curr_teams = event.get_unique_teams()
+            if has_common_team(curr_teams, prev_teams):
+                return True
+            prev_teams = curr_teams
+        elif isinstance(event, OtherEvent):
+            prev_teams = set()
+
+    return False

@@ -295,6 +295,50 @@ def test_double_mission_handling_pause():
     assert tournament[4].total_duration() == 75
     assert tournament[0].blocks[0].number_of_events() == 7
 
+def test_double_mission_handling_empty_field():
+    test_model = Model()
+
+    # Set days in model
+    days = [i for i in range(5)]
+    test_model.set_days(days)
+
+    # Set events in model
+    test_events = {}
+    test_events["1"] = [
+        OtherEvent(15, "", False, "", 1, "during", 2)
+        ]
+    test_model.set_other_events(test_events)
+
+    # Set categories in model
+    cats = []
+    cats.append(Category("Cat1", "1", 4, _create_n_teams(6)))
+    test_model.set_categories(cats)
+
+    # Set grouping infos in model
+    group_info = {}
+    group_info[f"{1}"] = {
+        "match_dur": 15,
+        "num_fields": 2,
+        "double_missions": "empty_field"
+    }
+    test_model.set_group_info(group_info)
+    
+    tournament = create_schedule(test_model)
+
+    assert tournament[0].blocks[0].total_duration() == 150
+    assert tournament[1].blocks[0].total_duration() == 135
+    assert tournament[2].blocks[0].total_duration() == 135
+    assert tournament[3].blocks[0].total_duration() == 135
+    assert tournament[4].blocks[0].total_duration() == 135
+
+    assert len(tournament[0].blocks[0].get_event(1).matches) == 1
+    assert len(tournament[0].blocks[0].get_event(4).matches) == 1
+    assert len(tournament[0].blocks[0].get_event(5).matches) == 1
+    assert len(tournament[0].blocks[0].get_event(7).matches) == 0
+    assert len(tournament[0].blocks[0].get_event(9).matches) == 1
+
+    assert len(tournament[1].blocks[0].get_event(4).matches) == 0
+    
 
 def _create_n_teams(num_teams: int) -> list:
     teams = []
