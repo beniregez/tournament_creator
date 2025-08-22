@@ -1,9 +1,12 @@
+import os
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QFileDialog, QLineEdit, QLabel, QSpacerItem, QSpinBox,
     QSizePolicy, QCheckBox
 )
 from PyQt5.QtCore import Qt
+
+from view.status_label import StatusLabel
 
 class HomeView(QWidget):
     def __init__(self, controller):
@@ -51,6 +54,11 @@ class HomeView(QWidget):
         main_layout.addLayout(button_layout)
         self.setLayout(main_layout)
 
+        # Status label to show messages
+        self.status_label = StatusLabel()
+        self.status_label.setFixedHeight(60)
+        main_layout.addWidget(self.status_label)
+
     def collect_input_fields(self):
         return {
             "title": self.title_input.text().strip(),
@@ -71,8 +79,12 @@ class HomeView(QWidget):
         filename, _ = QFileDialog.getSaveFileName(self, "Save file", "", "JSON Files (*.json)")
         if filename:
             self.controller.save_model_to_json(filename)
+            short_name = os.path.basename(filename)
+            self.status_label.show_message(f"✅ {short_name} saved", 4000)
 
     def load_from_file(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Load file", "", "JSON Files (*.json)")
         if filename:
             self.controller.load_model_from_json(filename)
+            short_name = os.path.basename(filename)
+            self.status_label.show_message(f"✅ {short_name} loaded", 4000)
