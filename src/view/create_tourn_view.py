@@ -8,6 +8,7 @@ from PyQt5.QtGui import QFont, QBrush, QColor
 from PyQt5.QtCore import Qt
 
 from core import MatchEvent, OtherEvent
+from view.status_label import StatusLabel
 
 class CreateTourn(QWidget):
     def __init__(self, controller):
@@ -41,6 +42,11 @@ class CreateTourn(QWidget):
 
         self.main_layout.addLayout(button_layout)
 
+        # Status label to show messages
+        self.status_label = StatusLabel()
+        self.status_label.setFixedHeight(60)
+        self.main_layout.addWidget(self.status_label)
+
         self.setLayout(self.main_layout)
 
         if self.controller.model.get_tournament_generated():
@@ -52,10 +58,12 @@ class CreateTourn(QWidget):
     def generate_tourn(self):
         self.controller.generate_tournament_from_model()    # Generate tournament from Model
         self.build_schedule_tables()                        # Generate table with tournament
+        self.status_label.show_message("Tournament regenerated", 3000)
 
     # Use export module
     def export_excel(self):
         self.controller.export_to_excel()
+        self.status_label.show_message("✅ Tournament exported", 4000)
 
     def build_schedule_tables(self):
         # 1. Prepare days (as flattened list).
