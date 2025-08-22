@@ -13,6 +13,8 @@ class Model:
         self.group_info = {}
         self.other_events = {}
         self.tournament_generated = []
+
+        self.tournament_info["gen_ref_cards"] = True    # Set to True per default
     
     def set_data(self, data: dict):
         self.tournament_info = data.get("tournament_info", {})
