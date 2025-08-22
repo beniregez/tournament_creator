@@ -111,3 +111,4 @@ class MainView(QMainWindow):
         self.group_info_tab.populate_from_model(model)
         self.days_tab.populate_from_model(model)
         self.events_tab.populate_from_model(model)
+        self.create_tourn_tab.build_schedule_tables()
