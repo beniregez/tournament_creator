@@ -7,9 +7,10 @@ from core import EventDay, EventBlock, Category, Team, Match, MatchEvent, OtherE
 
 def create_schedule(model: Model) -> List[EventDay]:
     num_days = len(model.get_days())
+    if num_days == 0:
+        return []
 
     # 1. Create empty EventDays
-    # tournament = [[] for _ in range(num_days)]
     tournament = [EventDay() for _ in range(num_days)]
 
     # 2. Create empty EventBlocks. We need n + 1 because after last grouping block there might be after_events
