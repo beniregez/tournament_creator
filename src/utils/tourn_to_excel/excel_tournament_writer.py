@@ -8,13 +8,12 @@ from utils.tourn_to_excel.data_sheets_writer import DataSheetsWriter
 from utils.tourn_to_excel.day_sheets_writer import DaySheetsWriter
 
 class ExcelTournamentWriter():
-    def __init__(self, model: Model, output_path: str = "tourn_output", password: str = "password"):
+    def __init__(self, model: Model, output_path: str = "tourn_output"):
         self.model = model
         self.output_path = output_path
-        self.password = password
         self.wb = xlsxwriter.Workbook(f"{self.output_path}.xlsx")
-        self.day_sheets_writer = DaySheetsWriter(self.wb, self.model, self.password)
-        self.data_sheets_writer = DataSheetsWriter(self.wb, self.model, self.password)
+        self.day_sheets_writer = DaySheetsWriter(self.wb, self.model)
+        self.data_sheets_writer = DataSheetsWriter(self.wb, self.model)
 
     # Pipeline
     def write_to_excel(self):

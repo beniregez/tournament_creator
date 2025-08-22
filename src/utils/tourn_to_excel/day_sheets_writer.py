@@ -6,10 +6,11 @@ import xlsxwriter
 from xlsxwriter.utility import xl_rowcol_to_cell
 
 class DaySheetsWriter():
-    def __init__(self, wb, model: Model, password: str):
+    def __init__(self, wb, model: Model):
         self.wb = wb
         self.model = model
-        self.password = password
+        password = self.model.get_tournament_info().get("Password")
+        self.password = password if password else "password"
         self.tourn_generated = self.model.get_tournament_generated()
         self.team_color_formats = {}
 
@@ -26,6 +27,7 @@ class DaySheetsWriter():
         self.worksheets = []
         for day in self.model.get_days():
             sheet = self.wb.add_worksheet(day["Title"])
+            sheet.protect(self.password)
             print("Sheet:", sheet.get_name(), "created.")
             self.worksheets.append(sheet)
             sheet.hide_gridlines(2)
@@ -99,10 +101,10 @@ class DaySheetsWriter():
             'bold': True, 'font_size': 11, 'align': 'center', 'valign': 'vcenter'
         })
         self.result_cell_format = self.wb.add_format({
-            'bg_color': '#B7FFFF', 'bold': False, 'font_size': 11, 'align': 'center', 'valign': 'vcenter', 'border': 1
+            'locked': False, 'bg_color': '#B7FFFF', 'bold': False, 'font_size': 11, 'align': 'center', 'valign': 'vcenter', 'border': 1
         })
         self.ref_cell_format = self.wb.add_format({
-            'bg_color': '#F9F9F9', 'bold': False, 'font_size': 11, 'align': 'center', 'valign': 'vcenter', 'border': 1
+            'locked': False, 'bg_color': "#F0F0F0", 'bold': False, 'font_size': 11, 'align': 'center', 'valign': 'vcenter', 'border': 1
         })
         self.colon_cell_format = self.wb.add_format({
             'bold': False, 'font_size': 11, 'align': 'center', 'valign': 'vcenter', 'border': 1

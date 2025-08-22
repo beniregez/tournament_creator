@@ -5,7 +5,7 @@ from utils.tourn_to_excel.day_sheets_writer import DaySheetsWriter
 
 class DataSheetsWriter():
 
-    def __init__(self, wb, model: Model, password: str):
+    def __init__(self, wb, model: Model):
         self.wb = wb
 
         self.model = model
@@ -13,7 +13,8 @@ class DataSheetsWriter():
         self.days = self.model.get_days()
         self.group_info = self.model.get_group_info()
 
-        self.password = password
+        password = self.model.get_tournament_info().get("Password")
+        self.password = password if password else "password"
         self.day_sheet_names = [day["Title"] for day in self.model.get_days()]
 
         self.team_color_formats = {}    # TODO: remove and use color_formats instead
@@ -43,6 +44,7 @@ class DataSheetsWriter():
 
     def init_data_sheet(self, name: str = "Data"):
         self.data_sheet = self.wb.add_worksheet(name)
+        self.data_sheet.protect(self.password)
         print("Sheet:", self.data_sheet.get_name(), "created.")
 
     def define_cell_formats_data_sheet(self):
@@ -252,6 +254,7 @@ class DataSheetsWriter():
 
     def init_scoreboard_sheet(self, name: str = "Scoreboard"):
         self.scoreboard_sheet = self.wb.add_worksheet(name)
+        self.scoreboard_sheet.protect(self.password)
         print("Sheet:", self.scoreboard_sheet.get_name(), "created.")
 
     def write_scoreboards(self, row_offset: int):
