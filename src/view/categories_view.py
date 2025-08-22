@@ -250,6 +250,26 @@ class CategoriesView(QWidget):
         return categories
     
     def populate_from_model(self, model):
+        # Reset table
+        self.column_colors = {}
+        for col in range(self.MAX_CATEGORIES):
+            # Empty header row
+            self.table.setItem(self.TITLE_ROW_INDEX, col, QTableWidgetItem(""))
+
+            # Reset Group Spin
+            group_spin = self.table.cellWidget(self.GROUP_ROW_INDEX, col)
+            if group_spin:
+                group_spin.setValue(0)
+
+            # Reset Runs Spin
+            runs_spin = self.table.cellWidget(self.RUNS_ROW_INDEX, col)
+            if runs_spin:
+                runs_spin.setValue(0)
+
+            # Empty Team rows
+            for row in range(self.TEAM_ROW_OFFSET, self.table.rowCount()):
+                self.table.setItem(row, col, QTableWidgetItem(""))
+
         categories = model.get_categories()
         self.column_colors = {}
 
