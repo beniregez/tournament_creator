@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 
-@dataclass(frozen=True)
+@dataclass(unsafe_hash=True)
 class Team:
     name: str
     color: str = "#FFFFFF"

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import xlsxwriter
 from xlsxwriter.utility import xl_rowcol_to_cell
-
+import copy
 
 from core.event import MatchEvent, OtherEvent
 from model.model import Model
@@ -11,7 +11,8 @@ from utils.tourn_to_excel.day_sheets_writer import DaySheetsWriter
 
 class ExcelTournamentWriter():
     def __init__(self, model: Model, output_path: str = "tourn_output", password: str = "password"):
-        self.model = model
+        self.model = copy.deepcopy(model)
+        self.model.remove_team_name_dublicates()
         self.output_path = output_path
         self.password = password
         self.wb = xlsxwriter.Workbook(f"{self.output_path}.xlsx")

@@ -73,7 +73,22 @@ class Model:
 
     def get_days(self) -> list:
         return self.days
-    
+
+    def remove_team_name_dublicates(self):
+        team_names = []
+        for cat in self.categories:
+            for team in cat.teams:
+                if team.name in team_names:
+                    name = team.name
+                    appendix = 1
+                    # While team name is a dublicate: iterate appendix
+                    while name in team_names:
+                        name = f"{team.name} {appendix}"
+                        appendix += 1
+                    team.name = name
+                team_names.append(team.name)
+                
+
     def set_categories(self, categories: List[Category]):
         """Set categories and check if groupings have changed."""
         self.categories = categories
@@ -117,8 +132,8 @@ class Model:
             self.groupings_changed = True
         self._prev_group_ids = new_group_ids
 
-    def get_groupings_changed(self) -> bool:
-        return self.groupings_changed
-
     def set_groupings_changed(self, value: bool):
         self.groupings_changed = value
+
+    def get_groupings_changed(self) -> bool:
+        return self.groupings_changed
