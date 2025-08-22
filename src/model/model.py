@@ -68,26 +68,32 @@ class Model:
     def get_tournament_info(self) -> dict:
         return self.tournament_info
 
+    def get_duplicate_day_titles(self):
+        day_titles = []
+        duplicates = []
+        for day in self.days:
+            if day["Title"] in day_titles:
+                duplicates.append(day["Title"])
+            else:
+                day_titles.append(day["Title"])
+        return duplicates if len(duplicates) > 0 else None
+
     def set_days(self, days):
         self.days = days
 
     def get_days(self) -> list:
         return self.days
 
-    def remove_team_name_dublicates(self):
+    def get_duplicate_team_names(self):
         team_names = []
+        duplicates = []
         for cat in self.categories:
             for team in cat.teams:
                 if team.name in team_names:
-                    name = team.name
-                    appendix = 1
-                    # While team name is a dublicate: iterate appendix
-                    while name in team_names:
-                        name = f"{team.name} {appendix}"
-                        appendix += 1
-                    team.name = name
-                team_names.append(team.name)
-                
+                    duplicates.append(team.name)
+                else:
+                    team_names.append(team.name)
+        return duplicates if len(duplicates) > 0 else None
 
     def set_categories(self, categories: List[Category]):
         """Set categories and check if groupings have changed."""
