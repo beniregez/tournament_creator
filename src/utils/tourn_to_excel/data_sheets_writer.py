@@ -255,6 +255,8 @@ class DataSheetsWriter():
     def init_scoreboard_sheet(self, name: str = "Scoreboard"):
         self.scoreboard_sheet = self.wb.add_worksheet(name)
         self.scoreboard_sheet.protect(self.password)
+        self.scoreboard_sheet.hide_gridlines(2)
+
         print("Sheet:", self.scoreboard_sheet.get_name(), "created.")
 
     def write_scoreboards(self, row_offset: int):
