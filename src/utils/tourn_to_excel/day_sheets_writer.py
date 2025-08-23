@@ -8,11 +8,13 @@ from xlsxwriter.utility import xl_rowcol_to_cell
 class DaySheetsWriter():
     def __init__(self, wb, model: Model):
         self.wb = wb
+        self.worksheets = []
         self.model = model
         password = self.model.get_tournament_info().get("Password")
         self.password = password if password else "password"
         self.tourn_generated = self.model.get_tournament_generated()
         self.team_color_formats = {}
+        self.day_max_row_indices = []
 
     def write_days_to_excel(self):
         self.initialize_sheets()
@@ -22,9 +24,9 @@ class DaySheetsWriter():
         self.write_header_rows()
         self.write_time_slots(start_row_idx=2)
         self.write_events_and_appendix(start_row_idx=2)
+        self.set_print_area()
 
     def initialize_sheets(self):
-        self.worksheets = []
         for day in self.model.get_days():
             sheet = self.wb.add_worksheet(day["Title"])
             sheet.protect(self.password)
@@ -220,7 +222,8 @@ class DaySheetsWriter():
                 self._draw_right_col_border(ws, ev_idx + start_row_idx, num_fields)
             self._draw_bottom_row_borders(ws, ev_idx + start_row_idx + 2, num_fields)
             self._draw_right_col_border(ws, ev_idx + start_row_idx + 1, num_fields)
-            self._write_appendix(ws, ev_idx + start_row_idx + 3, num_fields)
+            max_row_idx = self._write_appendix_and_get_last_row_idx(ws, ev_idx + start_row_idx + 3, num_fields)
+            self.day_max_row_indices.append(max_row_idx)
 
     def _write_other_event(self, worksheet, event: OtherEvent, row_idx, num_fields):
         for col_idx in range(1, self.get_time_col_idx(num_fields)):
@@ -260,13 +263,31 @@ class DaySheetsWriter():
         col_idx = self.get_ref_col_idx(num_fields, field_idx)
         worksheet.write(row_idx, col_idx, "", self.ref_cell_format)
 
-    def _write_appendix(self, worksheet, start_row_idx, num_fields):
+    def _write_appendix_and_get_last_row_idx(self, worksheet, start_row_idx, num_fields):
         appendix = self.model.get_tournament_info().get("appendix_day_info", "")
         if appendix != "":
             col_idx = self.get_center_col_idx(num_fields)
             rows = appendix.splitlines()
             for row_idx, row in enumerate(rows):
-                worksheet.write(start_row_idx + row_idx, col_idx, row, self.standard_format)            
+                worksheet.write(start_row_idx + row_idx, col_idx, row, self.standard_format)
+            return start_row_idx + row_idx
+        return start_row_idx
+
+    def set_print_area(self):
+        for day_idx, day in enumerate(self.tourn_generated):
+            end_row_idx = self.day_max_row_indices[day_idx]
+            end_col_idx = self.get_time_col_idx(day.max_fields())
+            end_cell = xl_rowcol_to_cell(end_row_idx, end_col_idx)
+            area = f"{xl_rowcol_to_cell(0, 0)}:{end_cell}"
+            self.worksheets[day_idx].print_area(area)
+            self.worksheets[day_idx].fit_to_pages(1, 1)
+            # Set margins
+            self.worksheets[day_idx].set_margins(left=0.2, right=0.2, top=0.2, bottom=0.2)
+            # Center pages
+            self.worksheets[day_idx].center_horizontally()
+            self.worksheets[day_idx].center_vertically()
+            # Set format to A4
+            self.worksheets[day_idx].set_paper(9)
 
     def _draw_bottom_row_borders(self, worksheet, row_idx, num_fields):
         for col_idx in range(0, self.get_time_col_idx(num_fields) + 1):
