@@ -2,7 +2,7 @@ import os
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QFileDialog, QLineEdit, QLabel, QSpacerItem, QSpinBox,
-    QSizePolicy, QCheckBox
+    QSizePolicy, QCheckBox, QTextEdit
 )
 from PyQt5.QtCore import Qt
 
@@ -21,7 +21,7 @@ class HomeView(QWidget):
         title_label = QLabel("Title of the tournament:")
         title_row.addWidget(title_label)
 
-        # Input field
+        # Title input field
         self.title_input = QLineEdit()
         self.title_input.editingFinished.connect(self.update_model)
         self.title_input.setPlaceholderText("Enter title...")
@@ -30,6 +30,18 @@ class HomeView(QWidget):
         title_row.addWidget(self.title_input)
 
         main_layout.addLayout(title_row)
+        main_layout.addSpacing(25)
+
+        # Info on Tournament day sheets
+        appendix_label = QLabel("Info on Tournament day sheets:")
+        main_layout.addWidget(appendix_label)
+
+        self.appendix_input = QTextEdit()
+        self.appendix_input.setPlaceholderText("Enter additional info for day sheets...")
+        self.appendix_input.setMinimumHeight(100)
+        self.appendix_input.textChanged.connect(self.update_model)
+        main_layout.addWidget(self.appendix_input)
+
         main_layout.addSpacing(25)
 
         # Checkbox: Decide whether referee cards shall be generated when exporting.
@@ -62,12 +74,14 @@ class HomeView(QWidget):
     def collect_input_fields(self):
         return {
             "title": self.title_input.text().strip(),
+            "appendix_day_info": self.appendix_input.toPlainText().strip(),
             "gen_ref_cards": True if self.ref_checkbox.isChecked() else False
         }
 
     def populate_from_model(self, model):
         data = model.get_tournament_info()
         self.title_input.setText(data.get("title", ""))
+        self.appendix_input.setPlainText(data.get("appendix_day_info", ""))
         self.ref_checkbox.setChecked(data.get("gen_ref_cards", True))
         self.update_model()
 

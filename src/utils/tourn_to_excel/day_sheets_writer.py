@@ -21,7 +21,7 @@ class DaySheetsWriter():
         self.write_title_rows()
         self.write_header_rows()
         self.write_time_slots(start_row_idx=2)
-        self.write_events(start_row_idx=2)
+        self.write_events_and_appendix(start_row_idx=2)
 
     def initialize_sheets(self):
         self.worksheets = []
@@ -208,7 +208,7 @@ class DaySheetsWriter():
                     ws.write(start_row_idx + ev_idx + 1, col_idx, f"{curr_time.strftime("%H:%M")}", self.standard_format_all_borders)
 
     # Write all events + bottom row border
-    def write_events(self, start_row_idx):
+    def write_events_and_appendix(self, start_row_idx):
         for day_idx, day in enumerate(self.tourn_generated):
             num_fields = day.max_fields()
             ws = self.worksheets[day_idx]
@@ -220,6 +220,7 @@ class DaySheetsWriter():
                 self._draw_right_col_border(ws, ev_idx + start_row_idx, num_fields)
             self._draw_bottom_row_borders(ws, ev_idx + start_row_idx + 2, num_fields)
             self._draw_right_col_border(ws, ev_idx + start_row_idx + 1, num_fields)
+            self._write_appendix(ws, ev_idx + start_row_idx + 3, num_fields)
 
     def _write_other_event(self, worksheet, event: OtherEvent, row_idx, num_fields):
         for col_idx in range(1, self.get_time_col_idx(num_fields)):
@@ -258,6 +259,14 @@ class DaySheetsWriter():
         # for field_idx in range(0, num_fields):
         col_idx = self.get_ref_col_idx(num_fields, field_idx)
         worksheet.write(row_idx, col_idx, "", self.ref_cell_format)
+
+    def _write_appendix(self, worksheet, start_row_idx, num_fields):
+        appendix = self.model.get_tournament_info().get("appendix_day_info", "")
+        if appendix != "":
+            col_idx = self.get_center_col_idx(num_fields)
+            rows = appendix.splitlines()
+            for row_idx, row in enumerate(rows):
+                worksheet.write(start_row_idx + row_idx, col_idx, row, self.standard_format)            
 
     def _draw_bottom_row_borders(self, worksheet, row_idx, num_fields):
         for col_idx in range(0, self.get_time_col_idx(num_fields) + 1):
