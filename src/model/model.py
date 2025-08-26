@@ -15,7 +15,7 @@ class Model:
         self.tournament_generated = []
 
         self.tournament_info["gen_ref_cards"] = True    # Set to True per default
-        self.tournament_info["shuffle_seed"] = False    # Set to False per default
+        self.tournament_info["shuffle_seed"] = ""       # Set default
     
     def set_data(self, data: dict):
         self.tournament_info = data.get("tournament_info", {})
@@ -64,6 +64,8 @@ class Model:
         }
     
     def set_tournament_info(self, tournament_info):
+        seed = tournament_info.get("shuffle_seed", "")
+        tournament_info["shuffle_seed"] = str(seed) if tournament_info.get("shuffle") else ""
         self.tournament_info = tournament_info
         
     def get_tournament_info(self) -> dict:

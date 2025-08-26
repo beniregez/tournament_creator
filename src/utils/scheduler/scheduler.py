@@ -1,4 +1,7 @@
+import copy
+import hashlib
 import math
+import random
 from typing import List
 
 from model.model import Model
@@ -57,7 +60,14 @@ def create_schedule(model: Model) -> List[EventDay]:
                     tournament[e.day_index - 1].blocks[group_idx].add_event_after_n_nones(e.dur_index, e)
     
     # 4. Create rr_runs for every category
-    categories = model.get_categories().copy()
+    categories = copy.deepcopy(model.get_categories())
+    if model.get_tournament_info().get("shuffle", False):   # Shuffle team order if set to True
+        shuffle_seed = model.get_tournament_info().get("shuffle_seed", 0)
+        print(f"Scheduling with shuffle_seed: '{shuffle_seed}'")
+        for cat in categories:
+            cat.teams = shuffle_with_seed(cat.teams, shuffle_seed)
+    else:
+        print("Scheduling without shuffling.")
     rr_runs = []
     for cat in categories:
         rr_list = create_n_rr_runs(cat, True)
@@ -289,3 +299,11 @@ def has_double_missions(block: EventBlock):
             prev_teams = set()
 
     return False
+
+def shuffle_with_seed(lst: list, seed: str | int):
+    if isinstance(seed, str):
+        seed = int(hashlib.sha256(seed.encode()).hexdigest(), 16) % (10**8)
+    rng = random.Random(seed)
+    shuffled = lst[:]
+    rng.shuffle(shuffled)
+    return shuffled

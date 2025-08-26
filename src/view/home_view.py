@@ -55,15 +55,14 @@ class HomeView(QWidget):
         shuffle_row = QHBoxLayout()
         self.shuffle_checkbox = QCheckBox("Set seed to shuffle teams")
         self.shuffle_checkbox.stateChanged.connect(self.toggle_seed_input)
-        self.shuffle_checkbox.stateChanged.connect(self.update_model)
         shuffle_row.addWidget(self.shuffle_checkbox)
 
         self.seed_input = QLineEdit()
         self.seed_input.setPlaceholderText("Enter seed...")
         self.seed_input.setMinimumHeight(30)
         self.seed_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.seed_input.editingFinished.connect(self.update_model)
         self.seed_input.setVisible(False)
+        self.seed_input.textChanged.connect(self.update_model)
         shuffle_row.addWidget(self.seed_input)
         main_layout.addLayout(shuffle_row)
         main_layout.addSpacing(25)
@@ -105,14 +104,15 @@ class HomeView(QWidget):
         self.shuffle_checkbox.setChecked(data.get("shuffle", False))
         self.seed_input.setText(data.get("shuffle_seed", ""))
         self.toggle_seed_input()
-        self.update_model()
 
     def update_model(self):
-        info = self.collect_input_fields()
         self.controller.model.set_tournament_info(self.collect_input_fields())
 
     def toggle_seed_input(self):
-        self.seed_input.setVisible(self.shuffle_checkbox.isChecked())
+        visible = self.shuffle_checkbox.isChecked()
+        self.seed_input.setVisible(visible)
+        if not visible:
+            self.seed_input.clear()
 
     def save_to_file(self):
         filename, _ = QFileDialog.getSaveFileName(self, "Save file", "", "JSON Files (*.json)")
