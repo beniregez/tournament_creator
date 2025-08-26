@@ -24,12 +24,5 @@ class ExcelTournamentWriter():
         self.wb.close()
         print("Tournament exported to Excel.")
 
-        # # Wait until file exists
-        # while not os.path.exists(f"{self.output_path}.xlsx"):
-        #     time.sleep(1)
-        
-        # # Waiting time for security reasons
-        # time.sleep(1)
-
         ExcelToPDFExporter.export_days_to_pdf(len(self.model.get_tournament_generated()), self.output_path)
         print("Tournament exported to pdf.")

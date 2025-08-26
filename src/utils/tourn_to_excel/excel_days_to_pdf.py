@@ -26,7 +26,7 @@ class ExcelToPDFExporter():
         wb = excel.Workbooks.Open(xlsx_path)
 
         # Create new directory for pdfs
-        pdf_folder = os.path.abspath(output_path)
+        pdf_folder = os.path.abspath(f"{output_path}_pdfs")
         os.makedirs(pdf_folder, exist_ok=True)
 
         # All sheets in one pdf file
