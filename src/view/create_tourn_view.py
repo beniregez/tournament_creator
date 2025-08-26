@@ -119,11 +119,11 @@ class CreateTourn(QWidget):
                 home_header = QTableWidgetItem(f"Home {m_e + 1}")
                 home_header.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
                 self.table.setItem(1, col_offset + (m_e * 4) + 1, home_header)
-                self.table.setColumnWidth(col_offset + (m_e * 4) + 1, 120)
+                self.table.setColumnWidth(col_offset + (m_e * 4) + 1, 110)
                 away_header = QTableWidgetItem(f"Away {m_e + 1}")
                 away_header.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
                 self.table.setItem(1, col_offset + (m_e * 4) + 3, away_header)
-                self.table.setColumnWidth(col_offset + (m_e * 4) + 3, 120)
+                self.table.setColumnWidth(col_offset + (m_e * 4) + 3, 110)
                 if m_e != 0:
                     self.table.setColumnWidth(col_offset + (m_e * 4), 30)   # Spacer between matches
 
