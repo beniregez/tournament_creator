@@ -30,13 +30,13 @@ class DataSheetsWriter():
     def write_data_sheet_to_excel(self):
         self.init_data_sheet()
         self.define_cell_formats_data_sheet()
-        self.write_data_headers(row_offset=1)
-        self.write_data_rows(row_offset=1)
+        self.write_data_headers(row_offset=2)
+        self.write_data_rows(row_offset=2)
         self.set_data_sheet_col_widths()
 
     def write_scoreboard_sheet_to_excel(self):
         self.init_scoreboard_sheet()
-        self.write_scoreboards(row_offset=1)
+        self.write_scoreboards(row_offset=2)
         self.set_scoreboard_sheet_col_widths()
 
 
@@ -60,6 +60,8 @@ class DataSheetsWriter():
         self.color_font_formats.append(self.wb.add_format({'font_color': "#EA00FF", 'align': 'center'}))
 
         self.standard_format = self.wb.add_format({'align': 'center'})
+
+        self.title_format = self.wb.add_format({'bold': True, 'font_size': 16, 'align': 'left', 'valign': 'vcenter'})
 
     def write_data_headers(self, row_offset):
         subtitles = ["Teams", "Rang", "Punkte", "TD", "T", "GT", "S", "U", "N", "Total Sp", "gesp.", "Ber. Rang"]
@@ -260,6 +262,8 @@ class DataSheetsWriter():
         print("Sheet:", self.scoreboard_sheet.get_name(), "created.")
 
     def write_scoreboards(self, row_offset: int):
+        self.scoreboard_sheet.write(0, 0, f"Tabelle {self.model.get_tournament_info().get("title", "")}", self.title_format)
+
         cats = self.model.get_categories()
         data_sh_name = self.data_sheet.get_name()
         col_headers = ["", "Rang", "gesp.", "TD", "T", "GT", "S", "U", "N", "Punkte"]
@@ -298,6 +302,13 @@ class DataSheetsWriter():
                 self.scoreboard_sheet.write(row_idx, col_idx, "", self.get_custom_format('#FFFFFF', False, 0, 0, 2, 0))
             row_idx += 2
 
+        area = f"{xl_rowcol_to_cell(0, 0)}:{xl_rowcol_to_cell(row_idx, 9)}"
+        self.scoreboard_sheet.print_area(area)
+        self.scoreboard_sheet.fit_to_pages(1, 1)
+        self.scoreboard_sheet.set_margins(left=0.4, right=0.4, top=0.5, bottom=0.5)
+        self.scoreboard_sheet.center_vertically()
+        self.scoreboard_sheet.center_horizontally()
+        self.scoreboard_sheet.set_paper(9)  # Set format to A4
 
     def set_scoreboard_sheet_col_widths(self):
         self.scoreboard_sheet.set_column(0, 0, 22)

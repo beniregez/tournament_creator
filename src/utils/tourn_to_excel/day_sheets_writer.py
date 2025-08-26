@@ -38,7 +38,7 @@ class DaySheetsWriter():
     def define_cell_formats(self):
         # Title row
         self.title_format = self.wb.add_format({
-            'bold': True, 'font_size': 14, 'align': 'center', 'valign': 'vcenter', 'top': 2, 'bottom': 2
+            'bold': True, 'font_size': 16, 'align': 'center', 'valign': 'vcenter', 'top': 2, 'bottom': 2
         })
         self.title_left_format = self.wb.add_format({
             'bold': True, 'font_size': 14, 'align': 'center', 'valign': 'vcenter', 'top': 2, 'bottom': 2, 'left': 2
