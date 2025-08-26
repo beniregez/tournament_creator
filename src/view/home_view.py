@@ -51,6 +51,23 @@ class HomeView(QWidget):
         main_layout.addWidget(self.ref_checkbox)
         main_layout.addSpacing(25)
 
+         # Checkbox: Seed to shuffle teams
+        shuffle_row = QHBoxLayout()
+        self.shuffle_checkbox = QCheckBox("Set seed to shuffle teams")
+        self.shuffle_checkbox.stateChanged.connect(self.toggle_seed_input)
+        self.shuffle_checkbox.stateChanged.connect(self.update_model)
+        shuffle_row.addWidget(self.shuffle_checkbox)
+
+        self.seed_input = QLineEdit()
+        self.seed_input.setPlaceholderText("Enter seed...")
+        self.seed_input.setMinimumHeight(30)
+        self.seed_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.seed_input.editingFinished.connect(self.update_model)
+        self.seed_input.setVisible(False)
+        shuffle_row.addWidget(self.seed_input)
+        main_layout.addLayout(shuffle_row)
+        main_layout.addSpacing(25)
+
         # Save and Load Buttons
         button_layout = QHBoxLayout()
         self.save_btn = QPushButton("Save as JSON")
@@ -75,7 +92,9 @@ class HomeView(QWidget):
         return {
             "title": self.title_input.text().strip(),
             "appendix_day_info": self.appendix_input.toPlainText().strip(),
-            "gen_ref_cards": True if self.ref_checkbox.isChecked() else False
+            "gen_ref_cards": True if self.ref_checkbox.isChecked() else False,
+            "shuffle": self.shuffle_checkbox.isChecked(),
+            "shuffle_seed": self.seed_input.text().strip() if self.shuffle_checkbox.isChecked() else ""
         }
 
     def populate_from_model(self, model):
@@ -83,11 +102,17 @@ class HomeView(QWidget):
         self.title_input.setText(data.get("title", ""))
         self.appendix_input.setPlainText(data.get("appendix_day_info", ""))
         self.ref_checkbox.setChecked(data.get("gen_ref_cards", True))
+        self.shuffle_checkbox.setChecked(data.get("shuffle", False))
+        self.seed_input.setText(data.get("shuffle_seed", ""))
+        self.toggle_seed_input()
         self.update_model()
 
     def update_model(self):
         info = self.collect_input_fields()
         self.controller.model.set_tournament_info(self.collect_input_fields())
+
+    def toggle_seed_input(self):
+        self.seed_input.setVisible(self.shuffle_checkbox.isChecked())
 
     def save_to_file(self):
         filename, _ = QFileDialog.getSaveFileName(self, "Save file", "", "JSON Files (*.json)")
