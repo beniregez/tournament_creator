@@ -25,6 +25,7 @@ class DaySheetsWriter():
         self.write_time_slots(start_row_idx=2)
         self.write_events_and_appendix(start_row_idx=2)
         self.set_print_area()
+        return self.worksheets
 
     def initialize_sheets(self):
         for day in self.model.get_days():

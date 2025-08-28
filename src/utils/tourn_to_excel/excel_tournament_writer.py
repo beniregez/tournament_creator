@@ -19,8 +19,9 @@ class ExcelTournamentWriter():
 
     # Pipeline
     def write_to_excel(self):
-        self.day_sheets_writer.write_days_to_excel()
+        day_sheets = self.day_sheets_writer.write_days_to_excel()
         self.data_sheets_writer.write_sheets_to_excel()
+        self.data_sheets_writer.write_scoreboards_on_day_sheets(day_sheets)
         self.wb.close()
         print("Tournament exported to Excel.")
 

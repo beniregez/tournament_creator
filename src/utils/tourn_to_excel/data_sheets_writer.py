@@ -24,6 +24,14 @@ class DataSheetsWriter():
         self.write_data_sheet_to_excel()
         self.write_scoreboard_sheet_to_excel()
 
+    # Insert scoreboard in day sheets
+    def write_scoreboards_on_day_sheets(self, day_sheets:list):
+        for sheet_idx, sheet in enumerate(day_sheets):
+            max_fields = self.tourn_generated[sheet_idx].max_fields()
+            row_offset = 5
+            col_offset = DaySheetsWriter.get_ref_col_idx(max_fields, max_fields) + 1
+            self.write_scoreboards(sheet, data_row_offset=2, row_offset=row_offset, col_offset=col_offset)
+            self.set_scoreboard_col_widths(sheet, col_offset=col_offset)
 
     ##### Pipelines for sheets #####
 
@@ -34,10 +42,12 @@ class DataSheetsWriter():
         self.write_data_rows(row_offset=2)
         self.set_data_sheet_col_widths()
 
-    def write_scoreboard_sheet_to_excel(self):
-        self.init_scoreboard_sheet()
-        self.write_scoreboards(row_offset=2)
-        self.set_scoreboard_sheet_col_widths()
+    def write_scoreboard_sheet_to_excel(self, name:str = "Scoreboard"):
+        self.init_scoreboard_sheet(name)
+        self.scoreboard_sheet.write(0, 0, f"Tabelle {self.model.get_tournament_info().get("title", "")}", self.title_format)
+        last_row_idx = self.write_scoreboards(self.scoreboard_sheet, data_row_offset=2, row_offset=2, col_offset=0)
+        self.set_scoreboard_print_area(last_row_idx)
+        self.set_scoreboard_col_widths(self.scoreboard_sheet, col_offset=0)
 
 
     ##### Data sheet functions #####
@@ -254,23 +264,23 @@ class DataSheetsWriter():
 
     ##### Scoreboard sheet functions #####
 
-    def init_scoreboard_sheet(self, name: str = "Scoreboard"):
+    def init_scoreboard_sheet(self, name: str):
         self.scoreboard_sheet = self.wb.add_worksheet(name)
         self.scoreboard_sheet.protect(self.password)
         self.scoreboard_sheet.hide_gridlines(2)
 
         print("Sheet:", self.scoreboard_sheet.get_name(), "created.")
 
-    def write_scoreboards(self, row_offset: int):
-        self.scoreboard_sheet.write(0, 0, f"Tabelle {self.model.get_tournament_info().get("title", "")}", self.title_format)
+    def write_scoreboards(self, sheet, data_row_offset: int, row_offset: int, col_offset: int):
 
         cats = self.model.get_categories()
         data_sh_name = self.data_sheet.get_name()
         col_headers = ["", "Rang", "gesp.", "TD", "T", "GT", "S", "U", "N", "Punkte"]
 
-        row_idx = 1 + row_offset
+        target_row_idx = 1 + row_offset
+        data_row_idx = 1 + data_row_offset
         for cat in cats:
-            cat_start_row = row_idx
+            cat_start_row = data_row_idx
             cat_length = len(cat.teams)
             bg_color = cat.bg_color
             bg_color_light = self.lighten_color(bg_color, 0.4)
@@ -282,27 +292,32 @@ class DataSheetsWriter():
 
             # Cat headers
             for h_idx, h in enumerate(col_headers):
-                self.scoreboard_sheet.write(row_idx - 1, h_idx, h, cat_header_fmt_t_b)
-            self.scoreboard_sheet.write(row_idx - 1, 0, cat.name, cat_header_fmt_all)
-            self.scoreboard_sheet.write(row_idx - 1, 1, col_headers[1], cat_header_fmt_all)
-            self.scoreboard_sheet.write(row_idx - 1, 9, col_headers[9], cat_header_fmt_all)
+                sheet.write(target_row_idx - 1, col_offset + h_idx, h, cat_header_fmt_t_b)
+            sheet.write(target_row_idx - 1, col_offset, cat.name, cat_header_fmt_all)
+            sheet.write(target_row_idx - 1, col_offset + 1, col_headers[1], cat_header_fmt_all)
+            sheet.write(target_row_idx - 1, col_offset + 9, col_headers[9], cat_header_fmt_all)
 
             # Cat metric values
             for t_idx, team in enumerate(cat.teams):
-                self.scoreboard_sheet.write_formula(row_idx, 0, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 0)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 0)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_teams_fmt)
-                self.scoreboard_sheet.write_formula(row_idx, 1, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 1)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 1)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_rank_fmt)
-                self.scoreboard_sheet.write_formula(row_idx, 2, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 10)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 10)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_metr_fmt)
+                sheet.write_formula(target_row_idx, col_offset, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 0)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 0)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_teams_fmt)
+                sheet.write_formula(target_row_idx, col_offset + 1, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 1)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 1)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_rank_fmt)
+                sheet.write_formula(target_row_idx, col_offset + 2, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 10)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 10)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_metr_fmt)
                 for col_idx in [3, 4, 5, 6, 7, 8]:
-                    self.scoreboard_sheet.write_formula(row_idx, col_idx, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, col_idx)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, col_idx)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_metr_fmt)
-                self.scoreboard_sheet.write_formula(row_idx, 9, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 2)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 10)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_rank_fmt)
+                    sheet.write_formula(target_row_idx, col_offset + col_idx, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, col_idx)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, col_idx)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_metr_fmt)
+                sheet.write_formula(target_row_idx, col_offset + 9, f"INDEX({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 2)}, MATCH(LARGE({data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, ROW({data_sh_name}!{xl_rowcol_to_cell(t_idx, 10)})), {data_sh_name}!{self._get_formula_row_range(cat_start_row, cat_length -1, 11)}, 0))", cat_rank_fmt)
 
-                row_idx += 1
+                target_row_idx += 1
+                data_row_idx += 1
 
             for col_idx in range(10):
-                self.scoreboard_sheet.write(row_idx, col_idx, "", self.get_custom_format('#FFFFFF', False, 0, 0, 2, 0))
-            row_idx += 2
+                sheet.write(target_row_idx, col_offset + col_idx, "", self.get_custom_format('#FFFFFF', False, 0, 0, 2, 0))
+            target_row_idx += 2
+            data_row_idx += 2
 
-        area = f"{xl_rowcol_to_cell(0, 0)}:{xl_rowcol_to_cell(row_idx, 9)}"
+        return target_row_idx
+
+    def set_scoreboard_print_area(self, last_row_idx):
+        area = f"{xl_rowcol_to_cell(0, 0)}:{xl_rowcol_to_cell(last_row_idx, 9)}"
         self.scoreboard_sheet.print_area(area)
         self.scoreboard_sheet.fit_to_pages(1, 1)
         self.scoreboard_sheet.set_margins(left=0.4, right=0.4, top=0.5, bottom=0.5)
@@ -310,10 +325,9 @@ class DataSheetsWriter():
         self.scoreboard_sheet.center_horizontally()
         self.scoreboard_sheet.set_paper(9)  # Set format to A4
 
-    def set_scoreboard_sheet_col_widths(self):
-        self.scoreboard_sheet.set_column(0, 0, 22)
-        self.scoreboard_sheet.set_column(2, 8, 6)
-
+    def set_scoreboard_col_widths(self, sheet, col_offset:int):
+        sheet.set_column(col_offset, col_offset, 22)
+        sheet.set_column(col_offset + 2, col_offset + 8, 6)
 
     @staticmethod
     def lighten_color(hex_color: str, factor: float = 0.2):
