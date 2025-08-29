@@ -71,6 +71,20 @@ def create_schedule(model: Model) -> List[EventDay]:
     rr_runs = []
     for cat in categories:
         rr_list = create_n_rr_runs(cat, True)
+
+        # Prevent identical consecutive day schedule for a category
+        if model.get_tournament_info().get("prevent_identical_cat_days", False):
+            if int(cat.runs) % num_days == 0:
+                day_length = len(rr_list) // num_days
+                # Let first
+                rotated = rr_list[:day_length]
+                new_rr_list = rotated.copy()
+                # From day 2 on: Rotate and append
+                for n in range(1, num_days):
+                    rotated = [rotated[-1]] + rotated[:-1]  # Last round becomes first
+                    new_rr_list.extend(rotated)
+                rr_list = new_rr_list
+
         rr_runs.append(rr_list)
         cat.rr_runs = rr_list
         cat.matches = flatten_2d_list(rr_list)

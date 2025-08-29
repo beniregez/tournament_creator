@@ -51,6 +51,13 @@ class HomeView(QWidget):
         main_layout.addWidget(self.ref_checkbox)
         main_layout.addSpacing(25)
 
+        # Checkbox: Decide whether identical category days shall be prevented or not.
+        self.identical_checkbox = QCheckBox("Prevent identical match order for a category on to consecutive days.")
+        self.identical_checkbox.setChecked(False)  # Default
+        self.identical_checkbox.stateChanged.connect(self.update_model)
+        main_layout.addWidget(self.identical_checkbox)
+        main_layout.addSpacing(25)
+
          # Checkbox: Seed to shuffle teams
         shuffle_row = QHBoxLayout()
         self.shuffle_checkbox = QCheckBox("Set seed to shuffle teams")
@@ -93,6 +100,7 @@ class HomeView(QWidget):
             "appendix_day_info": self.appendix_input.toPlainText().strip(),
             "gen_ref_cards": True if self.ref_checkbox.isChecked() else False,
             "shuffle": self.shuffle_checkbox.isChecked(),
+            "prevent_identical_cat_days": True if self.identical_checkbox.isChecked() else False,
             "shuffle_seed": self.seed_input.text().strip() if self.shuffle_checkbox.isChecked() else ""
         }
 
@@ -101,6 +109,7 @@ class HomeView(QWidget):
         self.title_input.setText(data.get("title", ""))
         self.appendix_input.setPlainText(data.get("appendix_day_info", ""))
         self.ref_checkbox.setChecked(data.get("gen_ref_cards", True))
+        self.identical_checkbox.setChecked(data.get("prevent_identical_cat_days", False))
         self.shuffle_checkbox.setChecked(data.get("shuffle", False))
         self.seed_input.setText(data.get("shuffle_seed", ""))
         self.toggle_seed_input()
