@@ -79,7 +79,6 @@ class RefCardCreator():
             ws.set_margins(left=0.2, right=0.2, top=0.2, bottom=0.2)
             # Center pages
             ws.center_horizontally()
-            ws.center_vertically()
             # Set format to A4
             ws.set_paper(9)
 
