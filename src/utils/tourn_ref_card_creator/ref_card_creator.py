@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import os
 import xlsxwriter
 from xlsxwriter.utility import xl_rowcol_to_cell
 
@@ -11,7 +12,9 @@ class RefCardCreator():
         self.output_path = output_path
         self.tourn_generated = self.model.get_tournament_generated()
         self.model_days = self.model.get_days()
-        self.wb = xlsxwriter.Workbook(f"{self.output_path}.xlsx")
+        os.makedirs(self.output_path, exist_ok=True)
+        workbook_path = os.path.join(self.output_path, "ref_cards.xlsx")
+        self.wb = xlsxwriter.Workbook(workbook_path)
         self.border_formats = {}
         self.CARD_NUM_ROWS = 12
         self.CARD_NUM_COLS = 13

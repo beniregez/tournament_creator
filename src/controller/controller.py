@@ -1,4 +1,5 @@
 import json
+import os
 from utils.tourn_ref_card_creator.ref_card_creator import RefCardCreator
 from view.main_view import MainView
 from model.model import Model
@@ -62,10 +63,21 @@ class Controller:
     #     self.model.set_match_durs(cleaned_match_durs)
     
     def export_to_excel(self):
-        tourn_writer = ExcelTournamentWriter(self.model)
+        base_name = "output"
+        folder_name = base_name
+        counter = 1
+
+        while os.path.exists(folder_name):
+            folder_name = f"{base_name}{counter}"
+            counter += 1
+
+        os.makedirs(folder_name)
+
+        tourn_writer = ExcelTournamentWriter(self.model, output_dir=folder_name)
         tourn_writer.write_to_excel()
+
         if self.model.get_tournament_info().get("gen_ref_cards", False):
-            ref_card_creator = RefCardCreator(self.model)
+            ref_card_creator = RefCardCreator(self.model, output_path=folder_name)
             ref_card_creator.create_cards()
 
     def save_model_to_json(self, filename):
