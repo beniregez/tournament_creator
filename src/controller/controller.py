@@ -5,6 +5,7 @@ from view.main_view import MainView
 from model.model import Model
 from utils.scheduler.scheduler import create_schedule
 from utils.tourn_to_excel.excel_tournament_writer import ExcelTournamentWriter
+from utils.tourn_stats.stats_excel_creator import StatsExcelCreator
 
 class Controller:
     def __init__(self):
@@ -75,6 +76,9 @@ class Controller:
 
         tourn_writer = ExcelTournamentWriter(self.model, output_dir=folder_name)
         tourn_writer.write_to_excel()
+
+        stats_writer = StatsExcelCreator(self.model, output_dir=folder_name)
+        stats_writer.write_to_excel()
 
         if self.model.get_tournament_info().get("gen_ref_cards", False):
             ref_card_creator = RefCardCreator(self.model, output_path=folder_name)

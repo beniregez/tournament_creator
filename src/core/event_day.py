@@ -61,6 +61,32 @@ class EventDay:
         """Returns all valid events from all blocks."""
         return [event for block in self.blocks for event in block.get_valid_events()]
 
+    def count_team_home(self, team) -> int:
+        """Counts how many times the team appears as home (team1) in all matches of the day."""
+        count = 0
+        for block in self.blocks:
+            for ev in block.events:
+                if isinstance(ev, MatchEvent):
+                    for match in ev.matches:
+                        if match.team1 == team:
+                            count += 1
+        return count
+
+    def count_team_away(self, team) -> int:
+        """Counts how many times the team appears as away (team2) in all matches of the day."""
+        count = 0
+        for block in self.blocks:
+            for ev in block.events:
+                if isinstance(ev, MatchEvent):
+                    for match in ev.matches:
+                        if match.team2 == team:
+                            count += 1
+        return count
+
+    def count_team_total(self, team) -> int:
+        """Counts how many times the team appears in total (home or away) in all matches of the day."""
+        return self.count_team_home(team) + self.count_team_away(team)
+
     def to_dict(self) -> dict:
         return {
             "blocks": [block.to_dict() for block in self.blocks]
