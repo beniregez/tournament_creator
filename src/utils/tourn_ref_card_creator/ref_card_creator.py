@@ -63,7 +63,7 @@ class RefCardCreator():
                     curr_time += timedelta(minutes=ev.duration)
             # Set print area
             end_row_idx = (self.CARD_NUM_ROWS * ((match_idx + 1) // 2)) - 1
-            end_col_idx = (2 * self.CARD_NUM_COLS) - 1
+            end_col_idx = (2 * self.CARD_NUM_COLS) + 1
             end_cell = xl_rowcol_to_cell(end_row_idx, end_col_idx)
             area = f"{xl_rowcol_to_cell(0, 0)}:{end_cell}"
             ws.print_area(area)
@@ -71,12 +71,12 @@ class RefCardCreator():
             ws.fit_to_pages(1, 0)   # Width: 1 page. Length: as many pages as needed.
             # Set pagebreaks
             break_rows = []
-            num_pages = (match_idx // 8) + 1
+            num_pages = (match_idx // 10) + 1
             for p in range(num_pages):
-                break_rows.append((p + 1) * 4 * self.CARD_NUM_ROWS) 
+                break_rows.append((p + 1) * 5 * self.CARD_NUM_ROWS) 
             ws.set_h_pagebreaks(break_rows)
             # Set margins
-            ws.set_margins(left=0.2, right=0.2, top=0.2, bottom=0.2)
+            ws.set_margins(left=0.45, right=0.45, top=0.2, bottom=0.2)
             # Center pages
             ws.center_horizontally()
             # Set format to A4
@@ -84,7 +84,7 @@ class RefCardCreator():
 
     def _write_ref_card(self, ws, position: int, field: str, date: str, time: str, home: str, away: str):
         row_offset = (position // 2) * self.CARD_NUM_ROWS
-        col_offset = (position % 2) * self.CARD_NUM_COLS
+        col_offset = (position % 2) * (self.CARD_NUM_COLS + 2)
         # Header lines top & bottom
         for col_idx in range(col_offset + 1, col_offset + 12):
             ws.write(1 + row_offset, col_idx, "", self.header_center_fmt)
@@ -122,8 +122,8 @@ class RefCardCreator():
         for row_idx in range(row_offset + 3, row_offset + 7):
             ws.set_row(row_idx, 24)
         ws.set_row(row_offset + 7, 8)
-        ws.set_row(row_offset + 8, 21)
-        ws.set_row(row_offset + 9, 21)
+        ws.set_row(row_offset + 8, 23)
+        ws.set_row(row_offset + 9, 23)
         ws.set_row(row_offset + 10, 12)
         ws.set_row(row_offset + 11, 8)
 
@@ -140,6 +140,12 @@ class RefCardCreator():
         ws.write(row_offset, col_offset + 12, "", self.get_border_format(True, False, False, True))
         ws.write(row_offset + 11, col_offset, "", self.get_border_format(False, True, True, False))
         ws.write(row_offset + 11, col_offset + 12, "", self.get_border_format(False, True, False, True))
+        # Horizontal middle line
+        mid_cols = [13, 14]  # the two middle cols
+        border_fmt = self.get_border_format(left=True, color="#C0C0C0")
+        for mc in mid_cols:
+            for row_idx in range(row_offset, row_offset + self.CARD_NUM_ROWS):
+                ws.write(row_idx, mc, "", border_fmt)
 
     def get_border_format(self, top=False, bottom=False, left=False, right=False, color='#808080'):
         # Generate key based on active sides
@@ -175,9 +181,16 @@ class RefCardCreator():
 
 
     def _set_col_widths(self, ws):
-        for i in range(2):
-            offset = self.CARD_NUM_COLS
-            ws.set_column(offset * i, offset * i, 1)
-            ws.set_column(offset * i + 1, offset * i + 11, 4.5)
-            ws.set_column(offset * i + 6, offset * i + 6, 1)
-            ws.set_column(offset * i + 12, offset * i + 12, 1)
+        # Left block
+        ws.set_column(0, 0, 1)
+        ws.set_column(1, 11, 4.5)
+        ws.set_column(6, 6, 1)
+        ws.set_column(12, 12, 1)
+        # Middle columns
+        ws.set_column(13, 13, 8.5)
+        ws.set_column(14, 14, 8.5)
+        # Right block starts at 15
+        ws.set_column(15, 15, 1)
+        ws.set_column(16, 26, 4.5)
+        ws.set_column(21, 21, 1)
+        ws.set_column(27, 27, 1)
