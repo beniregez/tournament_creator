@@ -59,7 +59,7 @@ class GroupInfoView(QWidget):
             # --- Number of Fields ---
             spin_fields = QSpinBox()
             spin_fields.setMinimum(1)
-            spin_fields.setMaximum(2)
+            spin_fields.setMaximum(6)
             spin_fields.setValue(group_info.get(group_id_str, {}).get("num_fields", 1))
             row_layout.addWidget(QLabel("Fields:"))
             row_layout.addWidget(spin_fields)
