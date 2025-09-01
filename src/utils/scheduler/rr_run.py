@@ -20,6 +20,8 @@ def create_rr_run(cat: Category, alter_home_away: bool = False):
                     rr_matches.append(Match(team2, team1))
                 else:
                     rr_matches.append(Match(team1, team2))
+        if rr % 2 == 1: # Switch home and away for the first match every second rr to distribute home & away fairly
+            rr_matches[0] = Match(rr_matches[0].team2, rr_matches[0].team1)
         rr_run.append(rr_matches)
 
         # Rotate teams (without first team) for next round robin
