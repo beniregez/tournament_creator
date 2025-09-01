@@ -1,5 +1,7 @@
-from PyQt5.QtWidgets import QMainWindow, QTabWidget, QMessageBox
-from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QMainWindow, QTabWidget, QMessageBox, QShortcut
+from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtGui import QKeySequence
+
 from view.categories_view import CategoriesView
 from view.days_view import DaysView
 from view.home_view import HomeView
@@ -7,7 +9,6 @@ from view.events_view import EventsView
 from view.group_info_view import GroupInfoView
 from view.overview_view import OverviewView
 from view.create_tourn_view import CreateTourn
-
 class MainView(QMainWindow):
     def __init__(self, controller):
         super().__init__()
@@ -35,7 +36,15 @@ class MainView(QMainWindow):
 
         self.setCentralWidget(self.tabs)
 
-    def on_tab_changed(self, index):        
+        # Global Shortcuts for Open and Save
+        shortcut_save = QShortcut(QKeySequence("Ctrl+S"), self)
+        shortcut_save.setContext(Qt.ApplicationShortcut)
+        shortcut_save.activated.connect(self.home_tab.quick_save)
+        shortcut_open = QShortcut(QKeySequence("Ctrl+O"), self)
+        shortcut_open.setContext(Qt.ApplicationShortcut)
+        shortcut_open.activated.connect(self.home_tab.load_from_file)
+
+    def on_tab_changed(self, index):
         prev_index = getattr(self, "_prev_tab_index", None)
         self._prev_tab_index = index
 

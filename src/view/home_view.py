@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import (
     QSizePolicy, QCheckBox, QTextEdit
 )
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtGui import QKeySequence
 
 from view.status_label import StatusLabel
 
@@ -12,6 +14,7 @@ class HomeView(QWidget):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
+        self.current_file_path = None
 
         main_layout = QVBoxLayout()
         main_layout.setAlignment(Qt.AlignTop)
@@ -46,19 +49,19 @@ class HomeView(QWidget):
 
         # Checkbox: Decide whether referee cards shall be generated when exporting.
         self.ref_checkbox = QCheckBox("Generate referee cards when exporting")
-        self.ref_checkbox.setChecked(True)  # Default: Generate referee cards.
+        self.ref_checkbox.setChecked(True)
         self.ref_checkbox.stateChanged.connect(self.update_model)
         main_layout.addWidget(self.ref_checkbox)
         main_layout.addSpacing(25)
 
         # Checkbox: Decide whether identical category days shall be prevented or not.
         self.identical_checkbox = QCheckBox("Prevent identical match order for a category on to consecutive days.")
-        self.identical_checkbox.setChecked(False)  # Default
+        self.identical_checkbox.setChecked(False)
         self.identical_checkbox.stateChanged.connect(self.update_model)
         main_layout.addWidget(self.identical_checkbox)
         main_layout.addSpacing(25)
 
-         # Checkbox: Seed to shuffle teams
+        # Checkbox: Seed to shuffle teams
         shuffle_row = QHBoxLayout()
         self.shuffle_checkbox = QCheckBox("Set seed to shuffle teams")
         self.shuffle_checkbox.stateChanged.connect(self.toggle_seed_input)
@@ -74,33 +77,55 @@ class HomeView(QWidget):
         main_layout.addLayout(shuffle_row)
         main_layout.addSpacing(25)
 
-        # Save and Load Buttons
-        button_layout = QHBoxLayout()
+        button_row = QHBoxLayout()
+
+        # Left button column (Save as JSON, Save)
+        left_col = QVBoxLayout()
         self.save_btn = QPushButton("Save as JSON")
         self.save_btn.clicked.connect(self.save_to_file)
         self.save_btn.setMinimumHeight(40)
-        button_layout.addWidget(self.save_btn)
+        left_col.addWidget(self.save_btn)
 
+        self.quick_save_btn = QPushButton("Save")
+        self.quick_save_btn.clicked.connect(self.quick_save)
+        self.quick_save_btn.setMinimumHeight(40)
+        left_col.addWidget(self.quick_save_btn)
+
+        button_row.addLayout(left_col)
+
+        # Small spacer between
+        button_row.addSpacing(20)
+
+        # Right button column (Load from JSON, Reset tournament)
+        right_col = QVBoxLayout()
         self.load_btn = QPushButton("Load from JSON")
         self.load_btn.clicked.connect(self.load_from_file)
         self.load_btn.setMinimumHeight(40)
-        button_layout.addWidget(self.load_btn)
+        right_col.addWidget(self.load_btn)
 
-        main_layout.addLayout(button_layout)
-        self.setLayout(main_layout)
+        self.reset_btn = QPushButton("Reset tournament")
+        self.reset_btn.clicked.connect(self.reset_tournament)
+        self.reset_btn.setMinimumHeight(40)
+        right_col.addWidget(self.reset_btn)
 
-        # Status label to show messages
+        button_row.addLayout(right_col)
+
+        main_layout.addLayout(button_row)
+
+        # Status label
         self.status_label = StatusLabel()
         self.status_label.setFixedHeight(60)
         main_layout.addWidget(self.status_label)
+
+        self.setLayout(main_layout)
 
     def collect_input_fields(self):
         return {
             "title": self.title_input.text().strip(),
             "appendix_day_info": self.appendix_input.toPlainText().strip(),
-            "gen_ref_cards": True if self.ref_checkbox.isChecked() else False,
+            "gen_ref_cards": self.ref_checkbox.isChecked(),
             "shuffle": self.shuffle_checkbox.isChecked(),
-            "prevent_identical_cat_days": True if self.identical_checkbox.isChecked() else False,
+            "prevent_identical_cat_days": self.identical_checkbox.isChecked(),
             "shuffle_seed": self.seed_input.text().strip() if self.shuffle_checkbox.isChecked() else ""
         }
 
@@ -127,12 +152,30 @@ class HomeView(QWidget):
         filename, _ = QFileDialog.getSaveFileName(self, "Save file", "", "JSON Files (*.json)")
         if filename:
             self.controller.save_model_to_json(filename)
+            self.current_file_path = filename
             short_name = os.path.basename(filename)
             self.status_label.show_message(f"✅ {short_name} saved", 4000)
+
+    def quick_save(self):
+        if self.current_file_path:
+            # Save
+            self.controller.save_model_to_json(self.current_file_path)
+            short_name = os.path.basename(self.current_file_path)
+            self.status_label.show_message(f"✅ {short_name} saved", 3000)
+        else:
+            # Fallback: Save as JSON
+            self.save_to_file()
 
     def load_from_file(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Load file", "", "JSON Files (*.json)")
         if filename:
             self.controller.load_model_from_json(filename)
+            self.current_file_path = filename
             short_name = os.path.basename(filename)
             self.status_label.show_message(f"✅ {short_name} loaded", 4000)
+
+    def reset_tournament(self):
+        self.controller.reset_model()
+        self.populate_from_model(self.controller.model)
+        self.current_file_path = None
+        self.status_label.show_message("🔄 Tournament reset", 4000)

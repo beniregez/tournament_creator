@@ -94,3 +94,7 @@ class Controller:
             data = json.load(f)
             self.model.set_data(data)
             self.view.populate_from_model(self.model)
+    
+    def reset_model(self):
+        self.model = Model()
+        self.view.populate_from_model(self.model)
