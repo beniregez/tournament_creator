@@ -47,13 +47,6 @@ class HomeView(QWidget):
 
         main_layout.addSpacing(25)
 
-        # Checkbox: Decide whether referee cards shall be generated when exporting.
-        self.ref_checkbox = QCheckBox("Generate referee cards when exporting")
-        self.ref_checkbox.setChecked(True)
-        self.ref_checkbox.stateChanged.connect(self.update_model)
-        main_layout.addWidget(self.ref_checkbox)
-        main_layout.addSpacing(25)
-
         # Checkbox: Decide whether identical category days shall be prevented or not.
         self.identical_checkbox = QCheckBox("Prevent identical match order for a category on to consecutive days.")
         self.identical_checkbox.setChecked(False)
@@ -123,7 +116,6 @@ class HomeView(QWidget):
         return {
             "title": self.title_input.text().strip(),
             "appendix_day_info": self.appendix_input.toPlainText().strip(),
-            "gen_ref_cards": self.ref_checkbox.isChecked(),
             "shuffle": self.shuffle_checkbox.isChecked(),
             "prevent_identical_cat_days": self.identical_checkbox.isChecked(),
             "shuffle_seed": self.seed_input.text().strip() if self.shuffle_checkbox.isChecked() else ""
@@ -133,7 +125,6 @@ class HomeView(QWidget):
         data = model.get_tournament_info()
         self.title_input.setText(data.get("title", ""))
         self.appendix_input.setPlainText(data.get("appendix_day_info", ""))
-        self.ref_checkbox.setChecked(data.get("gen_ref_cards", True))
         self.identical_checkbox.setChecked(data.get("prevent_identical_cat_days", False))
         self.shuffle_checkbox.setChecked(data.get("shuffle", False))
         self.seed_input.setText(data.get("shuffle_seed", ""))

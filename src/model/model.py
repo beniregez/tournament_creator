@@ -14,8 +14,7 @@ class Model:
         self.other_events = {}
         self.tournament_generated = []
 
-        self.tournament_info["gen_ref_cards"] = True    # Set to True per default
-        self.tournament_info["shuffle_seed"] = ""       # Set default
+        self.tournament_info["shuffle_seed"] = ""   # Set default
         self.tournament_info["prevent_identical_cat_days"] = False
     
     def set_data(self, data: dict):
