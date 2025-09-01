@@ -198,6 +198,11 @@ def create_schedule(model: Model) -> List[EventDay]:
             pause_dur = curr_group_info["pause_dur"]
             for day in tournament:
                 block = day.blocks[group_idx]
+
+                # Resolve parallel double missions first
+                block = resolve_parallel_double_missions(block, num_fields, match_dur, pause_dur)
+
+                # Resolve sequential double missions
                 prev_teams = set()
                 curr_teams = set()
                 other_ev_buffer = 0
@@ -218,6 +223,8 @@ def create_schedule(model: Model) -> List[EventDay]:
 
                 for idx, event in reversed(insertions):
                     block.insert_event_at_position(event, idx)
+
+                day.blocks[group_idx] = block
 
     # 7. Compact all blocks (remove nones).
     for day_idx in tournament:
@@ -321,3 +328,47 @@ def shuffle_with_seed(lst: list, seed: str | int):
     shuffled = lst[:]
     rng.shuffle(shuffled)
     return shuffled
+
+def resolve_parallel_double_missions(block: EventBlock, num_fields, match_dur, pause_dur):
+    new_block = EventBlock()
+    other_ev_buffer = 0
+
+    for ev in block.events:
+        if isinstance(ev, MatchEvent):
+            curr_event = MatchEvent(match_dur, [])
+            conflict_buffer = []
+            teams_in_event = set()
+
+            for match in ev.matches:
+                # Check if team is already in this event
+                if (match.team1 in teams_in_event) or (match.team2 in teams_in_event):
+                    # Move to buffer
+                    conflict_buffer.append(match)
+                else:
+                    curr_event.matches.append(match)
+                    teams_in_event.update([match.team1, match.team2])
+
+            # Append valid event
+            if len(curr_event.matches) > 0:
+                new_block.add_event_to_next_available_slot(curr_event)
+
+            # If conflicts existing: Pause, then new event
+            if conflict_buffer:
+                curr_pause = pause_dur - other_ev_buffer
+                if curr_pause > 0:
+                    pause_event = OtherEvent(curr_pause, "", False, None, None, None, None)
+                    new_block.add_event_to_next_available_slot(pause_event)
+
+                followup_event = MatchEvent(match_dur, conflict_buffer)
+                new_block.add_event_to_next_available_slot(followup_event)
+
+            other_ev_buffer = 0
+
+        elif isinstance(ev, OtherEvent):
+            new_block.add_event_to_next_available_slot(ev)
+            other_ev_buffer += ev.duration
+            if other_ev_buffer >= match_dur:
+                # Pause is long enough: teams may appear again
+                pass
+
+    return new_block
