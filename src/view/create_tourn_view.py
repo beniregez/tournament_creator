@@ -112,8 +112,9 @@ class CreateTourn(QWidget):
         for day in tourn_generated:
             num_cols += 1 + day.max_fields() * 4    # 1 for time, per fields: [home, ":", away, spacer]
             day_col_start_indices.append(num_cols)
-            if day.total_events() > num_rows:
-                num_rows = day.total_events() + 2   # + 2 because of headers
+            total_events = len(day.get_all_valid_events())
+            if total_events > 0:
+                num_rows = max(num_rows, total_events + 2)  # +2 for header
 
         self._reset_table(self.table, num_rows, num_cols)
         
