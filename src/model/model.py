@@ -9,7 +9,7 @@ class Model:
         self.groupings_changed: bool = False
         self._prev_group_ids: set[str] = set()
 
-        self.match_durs = {}
+        # self.match_durs = {}
         self.group_info = {}
         self.other_events = {}
         self.tournament_generated = []
@@ -21,7 +21,7 @@ class Model:
         self.tournament_info = data.get("tournament_info", {})
         self.days = data.get("days", [])
         self.categories = [Category.from_dict(cat) for cat in data["categories"]]
-        self.match_durs = data.get("match_durs", {})
+        # self.match_durs = data.get("match_durs", {})
         self.group_info = data.get("group_info", {})
         self.other_events = {
             group_id: [OtherEvent.from_dict(e) for e in group_events]
@@ -40,7 +40,7 @@ class Model:
             "tournament_info": self.tournament_info,
             "days": self.days,
             "categories": self.categories,
-            "match_durs": self.match_durs,
+            # "match_durs": self.match_durs,
             "group_info": self.group_info,
             "events": {
                 group_id: [e.to_dict() for e in group_events]
@@ -54,7 +54,7 @@ class Model:
             "tournament_info": self.tournament_info,
             "days": self.days,
             "categories": [category.to_dict() for category in self.categories],
-            "match_durs": self.match_durs,
+            # "match_durs": self.match_durs,
             "group_info": self.group_info,
             "events": {
                 group_id: [event.to_dict() for event in group_events]
@@ -109,11 +109,11 @@ class Model:
     def get_unique_groups(self) -> List[str]:
         return sorted({category.group for category in self.categories})
     
-    def set_match_durs(self, match_durs):
-        self.match_durs = match_durs
+    # def set_match_durs(self, match_durs):
+    #     self.match_durs = match_durs
     
-    def get_match_durs(self) -> dict:
-        return self.match_durs
+    # def get_match_durs(self) -> dict:
+    #     return self.match_durs
     
     def set_group_info(self, group_info):
         self.group_info = group_info
