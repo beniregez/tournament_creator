@@ -5,10 +5,10 @@ IF EXIST dist (
 )
 
 echo Creating portable EXE...
-pyinstaller --onefile --windowed --name tournament_creator main.py
+pyinstaller --onefile --windowed --name tournament_creator --icon=assets/icon.ico --add-data "assets/icon.ico;assets" main.py
 
 IF EXIST dist\tournament_creator.exe (
-    echo Done! The file is located in dist\main.exe
+    echo Done! The file is located in dist\tournament_creator.exe
 ) ELSE (
     echo Error! File could not be created.
 )
