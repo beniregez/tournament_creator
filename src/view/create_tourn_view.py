@@ -56,14 +56,49 @@ class CreateTourn(QWidget):
         self.build_schedule_tables()
 
     def generate_tourn(self):
-        self.controller.generate_tournament_from_model()    # Generate tournament from Model
-        self.build_schedule_tables()                        # Generate table with tournament
-        self.status_label.show_message("Tournament regenerated", 3000)
+        if self.model_is_complete():
+            self.controller.generate_tournament_from_model()    # Generate tournament from Model
+            self.build_schedule_tables()    # Generate table with tournament
+            self.status_label.show_message("Tournament regenerated", 3000)
 
     # Use export module
     def export_excel(self):
-        self.controller.export_to_excel()
-        self.status_label.show_message("✅ Tournament exported", 4000)
+        if self.model_is_complete():
+            if self.controller.model.get_tournament_generated() == None or self.controller.model.get_tournament_generated() == []:
+                self.status_label.show_message("❌ Press Regenerate button first.", 3000)
+            else:
+                self.controller.export_to_excel()
+                self.status_label.show_message("✅ Tournament exported", 4000)
+
+    def model_is_complete(self) -> bool:
+        # Check if model has categories
+        if self.controller.model.get_categories() == None or self.controller.model.get_categories() == []:
+            self.status_label.show_message("❌ Fill in at least one category.", 3000)
+            return False
+
+        # Check if model has at least 2 teams per category
+        min_num_teams = 2
+        for cat in self.controller.model.get_categories():
+            num_teams = 0
+            for team in cat.teams:
+                num_teams += 1
+            min_num_teams = min(min_num_teams, num_teams)
+        if min_num_teams <= 1:
+            self.status_label.show_message("❌ Fill in at least two teams per category.", 3000)
+            return False
+
+        # Check if model has group info
+        elif self.controller.model.get_group_info() == None or self.controller.model.get_group_info() == {}:
+            self.status_label.show_message("❌ Fill in group info.", 3000)
+            return False
+
+        # Check if model has at least one day
+        elif self.controller.model.get_days() == None or self.controller.model.get_days() == []:
+            self.status_label.show_message("❌ Fill in at least one day.", 3000)
+            return False
+
+        # Model is complete
+        return True
 
     def build_schedule_tables(self):
         # 1. Prepare days (as flattened list).
